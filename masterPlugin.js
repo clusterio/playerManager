@@ -1,15 +1,18 @@
 const fs = require("fs-extra");
+const path = require("path");
+const Express = require("express");
+const ejs = require("ejs");
 
 const pmSockets = [];
 const database = getDatabaseSync("database/playerManager.json");
 
 class masterPlugin {
-	constructor({config, pluginConfig, path, socketio, express}){
+	constructor({config, pluginConfig, pluginPath, socketio, express}){
 		this.config = config;
 		this.pluginConfig = pluginConfig;
-		this.pluginPath = path;
+		this.pluginPath = pluginPath;
 		this.io = socketio;
-		this.express = express;
+		this.app = express;
 		
 		this.managedPlayers = database.managedPlayers || [];
 		this.clients = {};
@@ -25,8 +28,6 @@ class masterPlugin {
 				
 				socket.on("playerManagerSetPlayerdata", data => {
 					let parsedData = this.parseData(data, {instanceID});
-					// console.log(parsedData);
-					console.log(this.managedPlayers)
 					this.handlePlayerdata(parsedData);
 				});
 				
@@ -37,6 +38,41 @@ class masterPlugin {
 				});
 			});
 		});
+		
+		// I can't seem to get express static pages + ejs rendering to work properly, so I write my own thing.
+		let pages = [
+			{
+				addr: "/playerManager/index.html",
+				path: path.join(__dirname,"static/index.html"),
+				render: ejs
+			},{
+				addr: "/playerManager",
+				path: path.join(__dirname,"static/index.html"),
+				render: ejs
+			},{
+				addr: "/playerManager/index.js",
+				path: path.join(__dirname,"static/index.js"),
+				render: ejs
+			},
+		]
+		pages.forEach(page => {
+			this.app.get(page.addr, async (req,res) => {
+				if(page.render){
+					page.render.renderFile(page.path, (err, str) => {
+						if(err) console.log(err);
+						res.send(str);
+					});
+				} else {
+					res.send(await fs.readFile(page.path));
+				}
+			});
+		});
+		this.app.use('/playerManager', Express.static(path.join(__dirname, 'static')));
+		// console.log(this.app._router.stack)
+		this.app.get("/api/playerManager/playerList", (req,res) => {
+			res.send(this.managedPlayers);
+		});
+		
 	}
 	async onExit(){
 		database.managedPlayers = this.managedPlayers;
