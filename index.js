@@ -1,4 +1,5 @@
 const needle = require("needle");
+const fs = require("fs-extra");
 
 module.exports = class remoteCommands {
 	constructor(mergedConfig, messageInterface, extras){
@@ -8,14 +9,33 @@ module.exports = class remoteCommands {
 		
 		this.socket.on("hello", () => {
 			this.socket.emit("registerPlayerManager");
-			this.socket.on("playerManagerGetPlayers", async data => {
-				let playerData = {};
-				let playerData = await this.messageInterface(await this.getCommand("sharedPlugins/playerManager/lua/getPlayerData.lua"));
-				this.socket.emit("playerManagerSetPlayerdata", playerData);
-			});
 		});
-		
-		
+		this.socket.on("playerManagerGetPlayers", async data => {
+			try {
+				let command = await this.getCommand("sharedPlugins/playerManager/lua/getPlayerData.lua");
+				let playerData = await this.messageInterface("/silent-command "+command);
+				this.socket.emit("playerManagerSetPlayerdata", playerData.replace(/(\r\n\t|\n|\r\t)/gm, ""));
+			} catch(e){
+				console.log(e);
+			}
+		});
+	}
+	async getCommand(file){
+		this.commandCache = this.commandCache || {};
+		if(!this.commandCache[file]){
+			try{
+				let command = (await fs.readFile(file)).toString();
+				this.commandCache[file] = command.replace(/(\r\n\t|\n|\r\t)/gm, " "); // remove newlines
+				return this.commandCache[file];
+			} catch(e){
+				console.log("Unable to get command from file!");
+				console.log(e)
+			}
+		} else if(typeof this.commandCache[file] == "string"){
+			return this.commandCache[file];
+		} else {
+			throw new Error("Command not found");
+		}
 	}
 	async factorioOutput(data){
 		
@@ -45,19 +65,5 @@ module.exports = class remoteCommands {
 				resolve(instance);
 			}
 		});
-	}
-	async getCommand(file){
-		this.commandCache = this.commandCache || {};
-		if(!this.commandCache[file]){
-			try{
-				let command = await fs.readFile(file);
-				this.commandCache[file] = command.replace(/(\r\n\t|\n|\r\t)/gm, " "); // remove newlines
-				return this.commandCache[file];
-			} catch(e){
-				console.log(new Error("Unable to get command from file!"));
-			}
-		} else {
-			throw new Error("Command not found");
-		}
 	}
 }
