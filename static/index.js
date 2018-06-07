@@ -11,6 +11,7 @@ async function getPlayerList(){
 	if(localStorage.playerListCache){
 		let playerListCache = localStorage.playerListCache;
 		if(Date.now() - playerListCache.timestamp < 5*60*1000){
+			console.log("Serving cached playerlist")
 			return playerListCache.data;
 		} else {
 			// cache is outdated, invalidate and refresh it
@@ -18,7 +19,7 @@ async function getPlayerList(){
 			return getPlayerList();
 		}
 	} else {
-		console.log("Gettinn pøayerlist")
+		console.log("Getting playerlist")
 		// get new playerList and cache it
 		let playerList = await getJSON("/api/playerManager/playerList");
 		
@@ -37,8 +38,11 @@ async function renderPlayerlist(playerList){
 		html += "<h2>"+player.name+"</h2>"
 		if(player.connected === "true"){
 			html += "<p>Online on "+await getInstanceName(player.instanceID)+"</p>";
-		} else html += "<p>Offline</p>";
-		html += "<p>Playtime: "+(Math.floor((Number(player.onlineTime)+(Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
+			html += "<p>Playtime: "+(Math.floor((Number(player.onlineTime)+(Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
+		} else {
+			html += "<p>Offline</p>";
+			html += "<p>Playtime: "+(Math.floor(((Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
+		}
 		html += "</div>";
 	}
 	console.log(html)

@@ -68,7 +68,6 @@ class masterPlugin {
 			});
 		});
 		this.app.use('/playerManager', Express.static(path.join(__dirname, 'static')));
-		// console.log(this.app._router.stack)
 		this.app.get("/api/playerManager/playerList", (req,res) => {
 			res.send(this.managedPlayers);
 		});
@@ -80,18 +79,20 @@ class masterPlugin {
 		return;
 	}
 	pollForPlayers(socket, instanceID){
-		console.log("Polling for players")
+		// console.log("Polling for players")
 		socket.emit("playerManagerGetPlayers");
 		setTimeout(() => this.pollForPlayers(socket, instanceID), this.getPlayerPollingTime(instanceID));
 	}
 	getPlayerPollingTime(instanceID){
 		if(!this.managedPlayers.length) return 10000;
-		let playersOnThisInstance = this.managedPlayers.reduce((acc, curr) => {
-			if(curr.connected === "true" && curr.instanceID == instanceID){
-				return ++acc;
-			} else return acc;
-		});
-		if(playersOnThisInstance){
+		
+		let playersOnThisInstance = 0;
+		for(let i in this.managedPlayers){
+			if(this.managedPlayers[i].connected === "true" && this.managedPlayers[i].instanceID == instanceID){
+				++playersOnThisInstance;
+			}
+		}
+		if(playersOnThisInstance > 0){
 			return 1000;
 		} else return 10000;
 	}
@@ -128,13 +129,14 @@ class masterPlugin {
 					}
 					if(player.connected === "false"){
 						if(this.managedPlayers[i].onlineTimeTotal == undefined) this.managedPlayers.onlineTimeTotal = 0;
-						this.managedPlayers[i].onlineTimeTotal += player.onlineTime; // player.onlineTime will be reset by Lua on next reconnect by this player
+						this.managedPlayers[i].onlineTimeTotal = (Number(this.managedPlayers[i].onlineTimeTotal) || 0) + (Number(player.onlineTime) || 0);
+						// player.onlineTime will be reset by Lua on next reconnect by this player, but we force it now to make it easier to get an accurate count of playtime
+						this.managedPlayers[i].onlineTime = 0;
 					}
 					break;
 				}
 			}
 		});
-		// this.managedPlayers = playerData;
 	}
 }
 module.exports = masterPlugin;
