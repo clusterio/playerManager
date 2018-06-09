@@ -2,6 +2,9 @@ const fs = require("fs-extra");
 const path = require("path");
 const Express = require("express");
 const ejs = require("ejs");
+const bcrypt = require("bcrypt-promise");
+const crypto = require('crypto');
+const base64url = require('base64url');
 
 const pmSockets = [];
 const database = getDatabaseSync("database/playerManager.json");
@@ -15,6 +18,7 @@ class masterPlugin {
 		this.app = express;
 		
 		this.managedPlayers = database.managedPlayers || [];
+		this.users = database.users || [];
 		this.clients = {};
 		this.io.on("connection", socket => {
 			let instanceID = "unknown";
@@ -50,8 +54,16 @@ class masterPlugin {
 				path: path.join(__dirname,"static/index.html"),
 				render: ejs
 			},{
-				addr: "/playerManager/index.js",
-				path: path.join(__dirname,"static/index.js"),
+				addr: "/playerManager/register",
+				path: path.join(__dirname,"static/register.html"),
+				render: ejs
+			},{
+				addr: "/playerManager/login",
+				path: path.join(__dirname,"static/login.html"),
+				render: ejs
+			},{
+				addr: "/playerManager/profile",
+				path: path.join(__dirname,"static/profile.html"),
 				render: ejs
 			},
 		]
@@ -71,10 +83,178 @@ class masterPlugin {
 		this.app.get("/api/playerManager/playerList", (req,res) => {
 			res.send(this.managedPlayers);
 		});
-		
+		this.app.post("/api/playerManager/register", async (req,res) => {
+			// do some basic input sanitization, not that its worth much
+			["name","email","password","passwordConfirmation"].forEach(property => {
+				if(req.body[property]) req.body[property] = req.body[property].trim().replace(/[";]/g, " ").replace(/[']/g,"").replace(/\r?\n|\r/g,'');
+			});
+			if(req.body
+			&& req.body.name
+			&& req.body.password
+			&& req.body.passwordConfirmation){
+				if(req.body.password !== req.body.passwordConfirmation){
+					res.send({
+						ok:false,
+						msg:"Passwords do not match",
+					});
+				} else {
+					let startTime = Date.now()
+					let hash = await bcrypt.hash(req.body.password, 12);
+					console.log("Hashed password for new user '"+req.body.name+"' in "+(Date.now()-startTime)+"ms");
+					
+					let user = {
+						_id: base64url(crypto.randomBytes(64)), // 64 character random string
+						name:req.body.name,
+						email:req.body.email,
+						password:hash,
+						sessions: [],
+					}
+					this.users.push(user);
+					res.send({
+						ok:true,
+						msg:"Account created",
+					})
+				}
+			} else {
+				res.send({
+					ok:false,
+					msg:"Invalid parameters; please send {name, [email], password, passwordConfirmation}",
+				});
+			}
+		});
+		this.app.post("/api/playerManager/login", async (req,res) => {
+			// check this users username and password against database and return a temporary auth token
+			if(req.body
+			&& req.body.name
+			&& req.body.password){
+				for(let i in this.users){
+					let user = this.users[i];
+					if(user.name === req.body.name){
+						// check password
+						let result = await bcrypt.compare(req.body.password, user.password);
+						console.log(user.name+" attempted login in: "+result);
+						if(result){
+							let session = {
+								token: base64url(crypto.randomBytes(64)),
+								startDate: Date.now(),
+								expiryDate: Date.now() + 1000*60*60*24,
+							}
+							this.users[i].sessions.push(session);
+							res.send({
+								ok:true,
+								msg:"Successfully logged in",
+								session,
+							});
+						} else {
+							res.send({
+								ok:false,
+								msg:"Authentication failed, wrong password/i",
+							});
+						}
+					}
+				}
+			} else {
+				res.send({
+					ok:false,
+					msg:"Invalid parameters; please send {name, password}",
+				});
+			}
+		});
+		this.app.post("/api/playerManager/getUserData", async (req,res) => {
+			if(req.body
+			&& req.body.name){
+				// get permissions depending on token and other permission systems
+				let permissions = await this.getPermissions(req.body.token, this.users);
+				
+				let user = this.users[this.findInArray("name",req.body.name,this.users)];
+				if(user){
+					let response = {
+						ok:true,
+						msg:"Successfully gathered user data",
+						userData: {},
+						permissions,
+					};
+					// add stuff everyone has permission to
+					permissions.all.read.forEach(property => {
+						response.userData[property] = user[property];
+					});
+					
+					// add more private stuff
+					if(permissions.user[req.body.name]){
+						let userPerms = permissions.user[req.body.name];
+						if(userPerms) userPerms.read.forEach(property => {
+							response.userData[property] = user[property];
+						});
+					}
+					res.send(response);
+				} else {
+					console.log(req.body)
+					res.send({
+						ok:false,
+						msg:"User not found",
+					});
+				}
+			} else {
+				res.send({
+					ok:false,
+					msg:"Invalid paramaters. Please run with {name, [token]}",
+				});
+			}
+		});
+	}
+	findInArray(key, value, array){
+		let indexes = [];
+		for(let i in array){
+			if(array[i][key] && array[i][key] === value) indexes.push(i);
+		}
+		return indexes;
+	}
+	async getPermissions(token, users){
+		let permissions = {
+			all:{
+				read: [
+					"name",
+					"admin",
+				],
+				write: [],
+			},
+			user:{
+				
+			},
+		};
+		for(let i in users){
+			let user = users[i];
+			for(let o in user.sessions){
+				let session = user.sessions[o];
+				
+				if(session.token === token
+				&& Date.now() < session.expiryDate){
+					permissions.user[user.name] = {
+						read: [
+							"email",
+						],
+						write: [
+							"password",
+							"email",
+						],
+					};
+					if(user.admin){
+						permissions.all.read.push("email");
+						permissions.all.write.push("email");
+						permissions.all.write.push("password");
+						permissions.all.write.push("admin");
+					}
+				} else if(Date.now() > session.expiryDate){
+					// remove expired session
+					user.sessions.splice(o, 1);
+				}
+			}
+		}
+		return permissions;
 	}
 	async onExit(){
 		database.managedPlayers = this.managedPlayers;
+		database.users = this.users;
 		await saveDatabase("database/playerManager.json", database);
 		return;
 	}

@@ -1,0 +1,20 @@
+<!doctype HTML>
+<head>
+	<%- include("./../../../static/head.html") %>
+	<link rel="stylesheet" type="text/css" href="playerManager.css">
+	<script defer src="/playerManager/register.js"></script>
+</head>
+
+<body>
+	<%- include("./../../../static/sidebar.html") %>
+	<div id="body">
+		<div id="registrationFormContainer" class="formContainer">
+			<input id="registerName" type="text" placeholder="Username"></input><br>
+			<input id="registerEmail" type="email" placeholder="Email (optional)"></input><br>
+			<input id="registerPass" type="password" placeholder="Password"></input><br>
+			<input id="registerPass2" type="password" placeholder="Repeat password"></input><br>
+			<input id="registerSubmit" type="button" value="Register"></input><br>
+			<p id="registerStatus"></p>
+		</div>
+	</div>
+</body>

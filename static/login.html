@@ -1,0 +1,18 @@
+<!doctype HTML>
+<head>
+	<%- include("./../../../static/head.html") %>
+	<link rel="stylesheet" type="text/css" href="playerManager.css">
+	<script defer src="/playerManager/login.js"></script>
+</head>
+
+<body>
+	<%- include("./../../../static/sidebar.html") %>
+	<div id="body">
+		<div id="loginFormContainer" class="formContainer">
+			<input id="loginName" type="text" placeholder="Username"></input><br>
+			<input id="loginPass" type="password" placeholder="Password"></input><br>
+			<input id="loginSubmit" type="button" value="Login"></input><br>
+			<p id="loginStatus"></p>
+		</div>
+	</div>
+</body>
