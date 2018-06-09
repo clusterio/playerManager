@@ -1,0 +1,31 @@
+<div id="currentUserBanner">
+	<a href="/playerManager/profile?username=Danielv123"><div class="button-black menuItem">
+		<p>Profile</p>
+	</div></a>
+	<a id="accountButton" href="/playerManager/account"><div class="button-black menuItem">
+		<p>Account</p>
+	</div></a>
+	<a id="logout"><div class="button-black menuItem floatRight">
+		<p>Logout</p>
+	</div></a>
+	<script>
+		let token;
+		let name;
+		try {
+			token = JSON.parse(localStorage.session).token;
+			name = JSON.parse(localStorage.session).name;
+		} catch(e){
+			console.log("No token/name found in localStorage!");
+		}
+		if(!name){
+			document.querySelector("#accountButton").href = "/playerManager/login";
+			document.querySelector("#accountButton p").innerHTML = "Login";
+			
+			document.querySelector("#logout").style.display = "none";
+		}
+		document.querySelector("#logout").onclick = function(){
+			delete localStorage.session;
+			document.location = document.location;
+		}
+	</script>
+</div>

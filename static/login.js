@@ -21,8 +21,15 @@ document.querySelector("#loginSubmit").onclick = async function(){
 		});
 		
 		console.log(resp);
-		if(resp.ok) localStorage.session = JSON.stringify(resp.session);
-	}catch(e){console.error(e)}
+		document.querySelector("#loginStatus").innerHTML = resp.msg;
+		if(resp.ok){
+			localStorage.session = JSON.stringify(resp.session);
+			setTimeout(afterLogin, 1000);
+		}
+	}catch(e){
+		console.error(e)
+		document.querySelector("#loginStatus").innerHTML = e
+	}
 }
 function afterLogin(){
 	document.location = "/playermanager";

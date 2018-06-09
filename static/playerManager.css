@@ -44,11 +44,16 @@
 	width:200px;
 	float:left;
 }
+#currentUserBanner .menuItem.floatRight {
+	float:right;
+}
 
 #playerlistDisplayContainer {
 	padding-top:50px;
 	width:100%;
 }
+
+
 
 /* Make userCSS code window have proper text colors */
 #ucss-code-wrapper * {

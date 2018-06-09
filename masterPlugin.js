@@ -140,6 +140,7 @@ class masterPlugin {
 								expiryDate: Date.now() + 1000*60*60*24,
 							}
 							this.users[i].sessions.push(session);
+							session.name = user.name;
 							res.send({
 								ok:true,
 								msg:"Successfully logged in",
@@ -148,7 +149,7 @@ class masterPlugin {
 						} else {
 							res.send({
 								ok:false,
-								msg:"Authentication failed, wrong password/i",
+								msg:"Authentication failed, wrong password",
 							});
 						}
 					}
@@ -246,6 +247,7 @@ class masterPlugin {
 					}
 				} else if(Date.now() > session.expiryDate){
 					// remove expired session
+					console.log("Removed session on timeout")
 					user.sessions.splice(o, 1);
 				}
 			}
