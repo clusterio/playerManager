@@ -2,15 +2,18 @@
 <head>
 	<%- include("./../../../static/head.html") %>
 	<link rel="stylesheet" type="text/css" href="/playerManager/playerManager.css">
-	<script defer src="/playerManager/index.js"></script>
+	<script defer type="module" src="/playerManager/account.js"></script>
 </head>
 
 <body>
 	<%- include("./../../../static/sidebar.html") %>
 	<div id="body">
 		<%- include("navbar.html") %>
-		<div id="playerlistDisplayContainer" class="playerManagerMainContainer">
-		
+		<div id="accountContainer" class="playerManagerMainContainer">
+			
+		</div>
+		<div id="accountEditor">
+			<h2>Edit account</h2>
 		</div>
 	</div>
 </body>

@@ -1,5 +1,5 @@
 <div id="currentUserBanner">
-	<a href="/playerManager/profile?username=Danielv123"><div class="button-black menuItem">
+	<a id="profileButton" href="/playerManager/profile"><div class="button-black menuItem">
 		<p>Profile</p>
 	</div></a>
 	<a id="accountButton" href="/playerManager/account"><div class="button-black menuItem">
@@ -22,6 +22,10 @@
 			document.querySelector("#accountButton p").innerHTML = "Login";
 			
 			document.querySelector("#logout").style.display = "none";
+			document.querySelector("#profileButton").style.display = "none";
+		} else {
+			document.querySelector("#profileButton").href = "/playerManager/profile?username="+name;
+			document.querySelector("#accountButton").href = "/playerManager/account?username="+name;
 		}
 		document.querySelector("#logout").onclick = function(){
 			delete localStorage.session;

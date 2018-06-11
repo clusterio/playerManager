@@ -2,9 +2,22 @@
 	console.log("hi")
 	console.log(await getPlayerList())
 	
-	console.log(await getUserData("Danielv123"));
+	let data = await getUserData(getParameterByName("username"));
+	console.log(data);
+	document.querySelector("#profileContainer").innerHTML = formatUserData(data.userData);
 })();
 
+function formatUserData(userData){
+	html = `<h1>${userData.name}</h1>`;
+	
+	["email", "admin"].forEach(prop => {
+		if(userData[prop] !== undefined){
+			html += `<p>${prop}: ${userData[prop]}</p>`
+		}
+	});
+	
+	return html;
+}
 async function getUserData(name, token){
 	if(!token){
 		try {

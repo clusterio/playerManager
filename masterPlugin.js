@@ -5,6 +5,7 @@ const ejs = require("ejs");
 const bcrypt = require("bcrypt-promise");
 const crypto = require('crypto');
 const base64url = require('base64url');
+const sanitizer = require('sanitizer');
 
 const pmSockets = [];
 const database = getDatabaseSync("database/playerManager.json");
@@ -65,6 +66,10 @@ class masterPlugin {
 				addr: "/playerManager/profile",
 				path: path.join(__dirname,"static/profile.html"),
 				render: ejs
+			},{
+				addr: "/playerManager/account",
+				path: path.join(__dirname,"static/account.html"),
+				render: ejs
 			},
 		]
 		pages.forEach(page => {
@@ -98,7 +103,7 @@ class masterPlugin {
 						msg:"Passwords do not match",
 					});
 				} else {
-					let startTime = Date.now()
+					let startTime = Date.now();
 					let hash = await bcrypt.hash(req.body.password, 12);
 					console.log("Hashed password for new user '"+req.body.name+"' in "+(Date.now()-startTime)+"ms");
 					
@@ -199,6 +204,81 @@ class masterPlugin {
 				res.send({
 					ok:false,
 					msg:"Invalid paramaters. Please run with {name, [token]}",
+				});
+			}
+		});
+		this.app.post("/api/playerManager/editUserData", async (req,res) => {
+			if(req.body
+			&& typeof req.body.token === "string"
+			&& typeof req.body.name === "string"
+			&& typeof req.body.fieldName === "string"
+			&& req.body.fieldValue){
+				let permissions = await this.getPermissions(req.body.token, this.users);
+				
+				try{// this statement fails whenever we request a modification to a user we don't have any explicit permissions to
+				var writePermissions = arrayRemoveDuplicates(permissions.all.write.concat(permissions.user[req.body.name].write))} catch(e){}
+				if(writePermissions.includes(req.body.fieldName)){
+					let userIndex = this.findInArray("name", req.body.name, this.users);
+					if(req.body.fieldName === "password"){
+						let startTime = Date.now()
+						let hash = await bcrypt.hash(req.body.fieldValue, 12);
+						console.log("Hashed password for new user '"+req.body.name+"' in "+(Date.now()-startTime)+"ms");
+						this.users[userIndex][req.body.fieldName] = hash;
+						res.send({
+							ok:true,
+							msg:`Updated value for field "password"`,
+						});
+					} else {
+						this.users[userIndex][req.body.fieldName] = sanitizer.sanitize(req.body.fieldValue);
+						res.send({
+							ok:true,
+							msg:`Updated value for field "${sanitizer.sanitize(req.body.fieldName)}"`,
+						});
+					}
+				} else {
+					res.send({
+						ok:false,
+						msg:"Insufficient privileges",
+					});
+				}
+			} else {
+				res.send({
+					ok:false,
+					msg:"Invalid parameters. Expected {token, name, fieldName, fieldValue}",
+				});
+			}
+		});
+		this.app.post("/api/playerManager/deleteUser", async (req,res) => {
+			if(req.body
+			&& req.body.name
+			&& req.body.password
+			&& req.body.passwordConfirmation){
+				if(req.body.password !== req.body.passwordConfirmation){
+					res.send({
+						ok:false,
+						msg:"Passwords do not match",
+					});
+				} else {
+					let userIndex = this.findInArray("name", req.body.name, this.users);
+					let user = this.users[userIndex];
+					if(await bcrypt.compare(req.body.password, user.password)){
+						let deletedData = this.users.splice(userIndex, 1);
+						res.send({
+							ok:true,
+							msg:"Account permanently deleted, it cannot be restored.",
+							data:deletedData,
+						});
+					} else {
+						res.send({
+							ok:false,
+							msg:"Authentication failed",
+						});
+					}
+				}
+			} else {
+				res.send({
+					ok:false,
+					msg:"Invalid parameters, please send {name, password, passwordConfirmation}",
 				});
 			}
 		});
@@ -323,6 +403,13 @@ class masterPlugin {
 }
 module.exports = masterPlugin;
 
+function arrayRemoveDuplicates(array){
+	let newArray = [];
+	array.forEach(value => {
+		if(!newArray.includes(value)) newArray.push(value);
+	});
+	return newArray;
+}
 function getDatabaseSync(path){
 	let db;
 	try {
