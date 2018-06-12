@@ -296,6 +296,7 @@ class masterPlugin {
 				read: [
 					"name",
 					"admin",
+					"description",
 				],
 				write: [],
 			},
@@ -317,6 +318,7 @@ class masterPlugin {
 						write: [
 							"password",
 							"email",
+							"description",
 						],
 					};
 					if(user.admin){

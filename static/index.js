@@ -1,5 +1,4 @@
 (async function(){
-	console.log("hi")
 	console.log(await getPlayerList())
 	let playerlistDisplayContainer = document.querySelector("#playerlistDisplayContainer");
 	playerlistDisplayContainer.innerHTML = await renderPlayerlist(await getPlayerList());
@@ -11,7 +10,7 @@ async function getPlayerList(){
 	if(localStorage.playerListCache){
 		let playerListCache = localStorage.playerListCache;
 		if(Date.now() - playerListCache.timestamp < 5*60*1000){
-			console.log("Serving cached playerlist")
+			console.log("Serving cached playerlist");
 			return playerListCache.data;
 		} else {
 			// cache is outdated, invalidate and refresh it
