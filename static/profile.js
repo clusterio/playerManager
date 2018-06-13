@@ -11,7 +11,7 @@ function formatUserData(userData){
 	
 	if(userData.description) html += `<p>${userData.description}</p><br>`;
 	
-	["email", "admin"].forEach(prop => {
+	["factorioName", "email", "admin", "factorioLinkToken"].forEach(prop => {
 		if(userData[prop] !== undefined){
 			html += `<p>${prop}: ${userData[prop]}</p>`
 		}

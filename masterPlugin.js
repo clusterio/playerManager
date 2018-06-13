@@ -21,10 +21,14 @@ class masterPlugin {
 		this.managedPlayers = database.managedPlayers || [];
 		this.users = database.users || [];
 		this.clients = {};
+		this.slaves = {};
 		this.io.on("connection", socket => {
 			let instanceID = "unknown";
 			socket.on("registerSlave", data => {
-				if(data.instanceID) instanceID = data.instanceID;
+				if(data.instanceID){
+					instanceID = data.instanceID;
+					this.slaves[instanceID] = socket;
+				}
 			});
 			socket.on("registerPlayerManager", () => {
 				console.log("Registered playerManager socket")
@@ -42,7 +46,12 @@ class masterPlugin {
 					pmSockets.splice(i, 1);
 				});
 			});
+			socket.on("gameChat", async data => {
+				let chatLine = data.data.replace(/(\r\n\t|\n|\r\t)/gm, "").replace("\r", "");
+				if(typeof chatLine == "string") this.handleChatLine(chatLine, instanceID);
+			});
 		});
+		
 		
 		// I can't seem to get express static pages + ejs rendering to work properly, so I write my own thing.
 		let pages = [
@@ -188,6 +197,7 @@ class masterPlugin {
 					// add more private stuff
 					if(permissions.user[req.body.name]){
 						let userPerms = permissions.user[req.body.name];
+						user.factorioLinkToken = base64url(crypto.randomBytes(8));
 						if(userPerms) userPerms.read.forEach(property => {
 							response.userData[property] = user[property];
 						});
@@ -295,6 +305,7 @@ class masterPlugin {
 			all:{
 				read: [
 					"name",
+					"factorioName",
 					"admin",
 					"description",
 				],
@@ -314,6 +325,7 @@ class masterPlugin {
 					permissions.user[user.name] = {
 						read: [
 							"email",
+							"factorioLinkToken",
 						],
 						write: [
 							"password",
@@ -383,7 +395,7 @@ class masterPlugin {
 		playerData.forEach(player => {
 			for(let i = 0; i <= this.managedPlayers.length; i++){
 				if(i == this.managedPlayers.length){
-					console.log("New player joined! "+player.name)
+					console.log("New player joined! "+player.name);
 					// we didn't find this player, a new person must have joined!
 					this.managedPlayers.push({name: player.name});
 				}
@@ -401,6 +413,23 @@ class masterPlugin {
 				}
 			}
 		});
+	}
+	async handleChatLine(line, instanceID){
+		console.log(line.indexOf("!playerManager"))
+		// chat lines are handled by ./commandHandler.js
+		let cmdHandler = require("./commandHandler.js");
+		let commandHandler = new cmdHandler(this, (command, instanceID) => {
+			if(this.slaves[instanceID] && command && typeof command === "string"){
+				console.log(command)
+				this.slaves[instanceID].emit("runCommand", {command});
+			}
+		});
+		if(line.indexOf("!playerManager")){
+			let parsedMessage = line.substr(line.indexOf("!playerManager")).split(" ");
+			if(commandHandler[parsedMessage[1]]){
+				commandHandler[parsedMessage[1]](parsedMessage, instanceID, line);
+			}
+		}
 	}
 }
 module.exports = masterPlugin;

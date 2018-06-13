@@ -16,11 +16,11 @@ import {getPlayerList, getUserData, getToken, arrayRemoveDuplicates} from "./pla
 function formatUserData(userData){
 	let html = `<div><h1>${userData.name}</h1>`;
 	
-	["email", "admin"].forEach(prop => {
-		if(userData[prop] !== undefined){
-			html += `<p>${prop}: ${userData[prop]}</p>`
-		}
-	});
+	// ["email", "admin"].forEach(prop => {
+		// if(userData[prop] !== undefined){
+			// html += `<p>${prop}: ${userData[prop]}</p>`
+		// }
+	// });
 	
 	return html + "</div>";
 }
