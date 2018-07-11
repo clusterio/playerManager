@@ -18,6 +18,8 @@ class masterPlugin {
 		this.io = socketio;
 		this.app = express;
 		
+		this.whitelist = [];
+		this.banlist = [];
 		this.managedPlayers = database.managedPlayers || [];
 		this.users = database.users || [];
 		this.clients = {};
@@ -25,7 +27,7 @@ class masterPlugin {
 		this.io.on("connection", socket => {
 			let instanceID = "unknown";
 			socket.on("registerSlave", data => {
-				if(data.instanceID){
+				if(data.instanceID && !isNaN(Number(data.instanceID))){
 					instanceID = data.instanceID;
 					this.slaves[instanceID] = socket;
 				}
@@ -51,7 +53,6 @@ class masterPlugin {
 				if(typeof chatLine == "string") this.handleChatLine(chatLine, instanceID);
 			});
 		});
-		
 		
 		// I can't seem to get express static pages + ejs rendering to work properly, so I write my own thing.
 		let pages = [
@@ -152,9 +153,9 @@ class masterPlugin {
 								token: base64url(crypto.randomBytes(64)),
 								startDate: Date.now(),
 								expiryDate: Date.now() + 1000*60*60*24,
+								name: user.name,
 							}
 							this.users[i].sessions.push(session);
-							session.name = user.name;
 							res.send({
 								ok:true,
 								msg:"Successfully logged in",
@@ -292,6 +293,67 @@ class masterPlugin {
 				});
 			}
 		});
+		// Manage whitelist/banlist
+		this.app.post("/api/playerManager/whitelist", async (req,res) => {
+			if(req.body
+			&& typeof req.body.factorioName == "string"
+			&& typeof req.body.action == "string"
+			&& (req.body.action == "add" || req.body.action == "remove")
+			&& typeof req.body.token == "string"){
+				let permissions = await this.getPermissions(req.body.token, this.users);
+				if(req.body.action == "add" && permissions.cluster.includes("whitelist")){
+					if(!this.whitelist.includes(req.body.factorioName)){
+						this.whitelist.push(req.body.factorioName);
+						this.broadcastCommand(`/whitelist add ${req.body.factorioName}`);
+					}
+				} else if(req.body.action == "remove" && permissions.cluster.includes("removeWhitelist")){
+					this.broadcastCommand(`/whitelist remove ${req.body.factorioName}`);
+				}
+			}
+		});
+		this.app.post("/api/playerManager/banlist", async (req,res) => {
+			if(req.body
+			&& typeof req.body.factorioName == "string"
+			&& typeof req.body.action == "string"
+			&& ((req.body.action == "add" && typeof req.body.reason == "string") || req.body.action == "remove")
+			&& typeof req.body.token == "string"){
+				let permissions = await this.getPermissions(req.body.token, this.users);
+				if(req.body.action == "add" && permissions.cluster.includes("banlist")){
+					let indexes = this.findInArray("factorioName", req.body.factorioName, this.banlist)
+					if(indexes.length == 1){
+						// update an existing ban
+						this.banlist[indexes[0]].reason = req.body.reason;
+						this.broadcastCommand(`/banlist remove ${req.body.factorioName}`)
+					} else {
+						// ban a new player
+						this.banlist.push({
+							factorioName: req.body.factorioName,
+							reason: req.body.reason,
+						});
+					}
+					// Perform the ban
+					setTimeout(()=>this.broadcastCommand(`/ban ${req.body.factorioName} ${req.body.reason}`),1000);
+				} else if(req.body.action == "remove" && permissions.cluster.includes("removeBanlist")){
+					let indexes = this.findInArray("factorioName", req.body.factorioName, this.banlist)
+					indexes.forEach(i => {
+						let ban = this.banlist[i];
+						this.broadcastCommand(`/banlist remove ${ban.factorioName}`);
+						this.banlist.splice(i, 1);
+					});
+				}
+			}
+		});
+	}
+	async broadcastCommand(command){
+		let returnValues = [];
+		for(let instanceID in this.slaves){
+			let slave = this.slaves[instanceID];
+			slave.emit("runCommand", {
+				// commandID:Math.random(),
+				command,
+			});
+		);
+		return returnValues;
 	}
 	findInArray(key, value, array){
 		let indexes = [];
@@ -312,6 +374,10 @@ class masterPlugin {
 				write: [],
 			},
 			user:{
+				
+			},
+			cluster:[],
+			instance:{
 				
 			},
 		};
@@ -338,6 +404,10 @@ class masterPlugin {
 						permissions.all.write.push("email");
 						permissions.all.write.push("password");
 						permissions.all.write.push("admin");
+						permissions.cluster.push("whitelist");
+						permissions.cluster.push("removeWhitelist");
+						permissions.cluster.push("banlist");
+						permissions.cluster.push("removeBanlist");
 					}
 				} else if(Date.now() > session.expiryDate){
 					// remove expired session
