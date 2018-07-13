@@ -18,6 +18,29 @@ class masterPlugin {
 		this.io = socketio;
 		this.app = express;
 		
+		this.ui = {
+			sidebar: [
+				{
+					name:"playerManager",
+					getHtml: () => `
+					<a href="/playerManager">
+						<div id="playerManager-menu" class="button-black menuItem">
+							<p>Players</p>
+						</div>
+					</a>`,
+				},{
+					name:"whitelist",
+					getHtml: () => `
+					<a href="/playerManager/whitelist">
+						<div id="playerManager-whitelist-menu" class="button-black menuItem">
+							<p>Whitelist</p>
+						</div>
+					</a>
+					`
+				}
+			]
+		}
+		
 		this.whitelist = [];
 		this.banlist = [];
 		this.managedPlayers = database.managedPlayers || [];
@@ -63,6 +86,10 @@ class masterPlugin {
 			},{
 				addr: "/playerManager",
 				path: path.join(__dirname,"static/index.html"),
+				render: ejs
+			},{
+				addr: "/playerManager/whitelist",
+				path: path.join(__dirname,"static/whitelist.html"),
 				render: ejs
 			},{
 				addr: "/playerManager/register",
@@ -398,7 +425,7 @@ class masterPlugin {
 				// commandID:Math.random(),
 				command,
 			});
-		);
+		};
 		return returnValues;
 	}
 	findInArray(key, value, array){
