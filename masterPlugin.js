@@ -98,6 +98,7 @@ class masterPlugin {
 		this.app.get("/api/playerManager/playerList", (req,res) => {
 			res.send(this.managedPlayers);
 		});
+		// manage web interface users
 		this.app.post("/api/playerManager/register", async (req,res) => {
 			// do some basic input sanitization, not that its worth much
 			["name","email","password","passwordConfirmation"].forEach(property => {
@@ -294,6 +295,12 @@ class masterPlugin {
 			}
 		});
 		// Manage whitelist/banlist
+		this.app.get("/api/playerManager/whitelistedPlayers", async (req,res) => {
+			res.send(this.whitelist);
+		});
+		this.app.get("/api/playerManager/bannedPlayers", async (req,res) => {
+			res.send(this.banlist);
+		});
 		this.app.post("/api/playerManager/whitelist", async (req,res) => {
 			if(req.body
 			&& typeof req.body.factorioName == "string"
@@ -301,14 +308,35 @@ class masterPlugin {
 			&& (req.body.action == "add" || req.body.action == "remove")
 			&& typeof req.body.token == "string"){
 				let permissions = await this.getPermissions(req.body.token, this.users);
+
 				if(req.body.action == "add" && permissions.cluster.includes("whitelist")){
 					if(!this.whitelist.includes(req.body.factorioName)){
 						this.whitelist.push(req.body.factorioName);
 						this.broadcastCommand(`/whitelist add ${req.body.factorioName}`);
+						res.send({
+							ok:true,
+							msg:`Added player ${req.body.factorioName} to whitelist`,
+						});
 					}
+					
 				} else if(req.body.action == "remove" && permissions.cluster.includes("removeWhitelist")){
+					this.whitelist.splice(this.whitelist.indexOf(req.body.factorioName), 1);
 					this.broadcastCommand(`/whitelist remove ${req.body.factorioName}`);
+					res.send({
+						ok:true,
+						msg:`Player ${req.body.factorioName} removed from whitelist`,
+					});
+				} else {
+					res.send({
+						ok:false,
+						msg:"Insufficient permissions, make sure you have permissions.cluster.whitelist and/or permissions.cluster.removeWhitelist",
+					});
 				}
+			} else {
+				res.send({
+					ok:false,
+					msg:"Invalid parameters, please send {factorioName, action[add|remove], token}",
+				});
 			}
 		});
 		this.app.post("/api/playerManager/banlist", async (req,res) => {
@@ -319,28 +347,46 @@ class masterPlugin {
 			&& typeof req.body.token == "string"){
 				let permissions = await this.getPermissions(req.body.token, this.users);
 				if(req.body.action == "add" && permissions.cluster.includes("banlist")){
-					let indexes = this.findInArray("factorioName", req.body.factorioName, this.banlist)
+					let indexes = this.findInArray("factorioName", req.body.factorioName, this.banlist);
 					if(indexes.length == 1){
 						// update an existing ban
 						this.banlist[indexes[0]].reason = req.body.reason;
-						this.broadcastCommand(`/banlist remove ${req.body.factorioName}`)
+						this.broadcastCommand(`/banlist remove ${req.body.factorioName}`);
+						var msg = `Updated ban for user ${req.body.factorioName} for ${req.body.reason}`;
 					} else {
 						// ban a new player
 						this.banlist.push({
 							factorioName: req.body.factorioName,
 							reason: req.body.reason,
 						});
+						var msg = `Banned ${req.body.factorioName} for ${req.body.reason}`;
 					}
 					// Perform the ban
-					setTimeout(()=>this.broadcastCommand(`/ban ${req.body.factorioName} ${req.body.reason}`),1000);
+					setTimeout(()=>{
+						this.broadcastCommand(`/ban ${req.body.factorioName} ${req.body.reason}`);
+						res.send({
+							ok:true,
+							msg,
+						});
+					},1000);
 				} else if(req.body.action == "remove" && permissions.cluster.includes("removeBanlist")){
 					let indexes = this.findInArray("factorioName", req.body.factorioName, this.banlist)
+					let pardonedPlayers = [];
 					indexes.forEach(i => {
 						let ban = this.banlist[i];
 						this.broadcastCommand(`/banlist remove ${ban.factorioName}`);
-						this.banlist.splice(i, 1);
+						pardonedPlayers.push(this.banlist.splice(i, 1)[0]);
+					});
+					res.send({
+						ok:true,
+						msg:`Pardoned player(s) ${pardonedPlayers.join(", ")}`,
 					});
 				}
+			} else {
+				res.send({
+					ok:false,
+					msg:"Invalid parameters, please send {factorioName, action[add|remove], token, [reason]}",
+				});
 			}
 		});
 	}
