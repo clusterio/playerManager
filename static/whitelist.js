@@ -75,25 +75,31 @@ async function getPlayerList(){
 		return playerList;
 	}
 }
-async function renderStructuredlist(playerList){
-	let html = "";
-	for(let player in playerList){
-		player = playerList[player];
-		html += "<div>";
-		html += "<h2>"+player.name+"</h2>"
-		if(player.connected === "true"){
-			html += "<p>Online on "+await getInstanceName(player.instanceID)+"</p>";
-			html += "<p>Playtime: "+(Math.floor((Number(player.onlineTime)+(Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
-		} else {
-			html += "<p>Offline</p>";
-			html += "<p>Playtime: "+(Math.floor(((Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
+async function renderStructuredlist(list){
+	let cols = [];
+	list.forEach((obj, i) => {
+		for(let k in obj){
+			if(!cols.includes(k)) cols.push(k);
 		}
-		html += "</div>";
-	}
+	});
+	let html = "<table><tr>";
+	cols.forEach(col => {
+		html += `<td>${col}</td>`;
+	});
+	html += "</tr>"
+	list.forEach(obj => {
+		html += `<tr>`;
+		cols.forEach(col => {
+			html += `<td>${k}</td>`;
+		});
+		html += "</tr>";
+	});
+
+	html += "</table>";
 	console.log(html)
 	return html;
 }
-async function renderStringArray(data, {tableClass, trClass, tdClass}){
+async function renderStringArray(data, {tableClass, trClass, tdClass} = {}){
 	let html = `<table class="${tableClass || ""}"><tr class="${trClass || ""}>`;
 	data.forEach(elem => {
 		html += `<td class="${tdClass || ""}> ${elem} </td>`;

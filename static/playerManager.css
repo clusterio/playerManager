@@ -70,8 +70,17 @@
 .playerManagerMainContainer {
 	padding-top:50px;
 }
-
-
+.twoColChildContainer {
+	width: 50%;
+	height:100px;
+	float:left;
+	/* display: inline-block; */
+	background-color:red;
+}
+.twoColContainer {
+	width:100%;
+	/* height:400px; */
+}
 
 /* Make userCSS code window have proper text colors */
 #ucss-code-wrapper * {

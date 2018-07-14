@@ -10,11 +10,31 @@
 	<div id="body">
 		<%- include("navbar.html") %>
 		<div class="playerManagerMainContainer">
-			<div id="whitelistDisplayContainer" class="playerManagerSplitContainer">
-					
+			<style>
+				#userActionField input[type="button"] {
+					color:black;
+					width:100px;
+					height:30px;
+				}
+				#userActionField textarea {
+					color:black;
+					width:200px;
+					height:100px;
+				}
+			</style>
+			<div id="userActionField">
+				<textarea autofocus placeholder="Comma/newline seperated usernames"></textarea>
+				<br>
+				<input type="button" value="Whitelist">
+				<input type="button" value="ban">
 			</div>
-			<div id="banlistDisplayContainer" class="playerManagerSplitContainer">
-				
+			<div class="twoColContainer">
+				<div id="whitelistDisplayContainer" class="playerManagerSplitContainer twoColChildContainer">
+						
+				</div>
+				<div id="banlistDisplayContainer" class="playerManagerSplitContainer twoColChildContainer">
+					
+				</div>
 			</div>
 		</div>
 	</div>
