@@ -26,7 +26,7 @@ function formatUserData(userData){
 }
 class accountEditor{
 	constructor({data, name, selector, token}){
-		let writePermissions = arrayRemoveDuplicates(data.permissions.all.write.concat(data.permissions.user[name].write));
+		let writePermissions = arrayRemoveDuplicates(data.permissions.all.write.concat(data.permissions.user[name] ? data.permissions.user[name].write : []));
 		
 		let html = "<div id='editor' style='position:relative;'>";
 		writePermissions.forEach(perm => {

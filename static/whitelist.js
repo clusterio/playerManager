@@ -1,17 +1,79 @@
 (async function(){
-	
 	console.log(await getWhitelist());
 	console.log(await getBanlist());
+	
 	let whitelistDisplayContainer = document.querySelector("#whitelistDisplayContainer");
 	let banlistDisplayContainer = document.querySelector("#banlistDisplayContainer");
 	banlistDisplayContainer.innerHTML = await renderStructuredlist(await getBanlist());
 	whitelistDisplayContainer.innerHTML = await renderStringArray(await getWhitelist());
+	
+	let submitWhitelist = document.querySelector("#submitWhitelist");
+	let submitBan = document.querySelector("#submitBan");
+	
+	submitWhitelist.onclick = async () => {
+		let names = getUsernames("#userActionField > textarea");
+		let action = document.querySelector("#removeSlider").checked ? "remove" : "add";
+		let token = JSON.parse(localStorage.session).token;
+		
+		let responses = [];
+		for(let i in names) {
+			let factorioName = names[i];
+			responses.push(await postJSON("/api/playerManager/whitelist", {
+				factorioName,
+				action,
+				token,
+			}));
+			console.log(responses[i]);
+			if(i == names.length-1){
+				// clear cache since its now updated
+				delete localStorage.whitelistCache;
+				whitelistDisplayContainer.innerHTML = await renderStringArray(await getWhitelist());
+			}
+		};
+		
+		// clear cache since its now updated
+		delete localStorage.whitelistCache;
+		whitelistDisplayContainer.innerHTML = await renderStringArray(await getWhitelist());
+	}
+	submitBan.onclick = async () => {
+		let names = getUsernames("#userActionField > textarea");
+		let reason = document.querySelector("#banReason").value;
+		let action = document.querySelector("#removeSlider").checked ? "remove" : "add";
+		let token = JSON.parse(localStorage.session).token;
+		
+		let responses = [];
+		for(let i in names){
+			let factorioName = names[i];
+			responses.push(await postJSON("/api/playerManager/banlist", {
+				factorioName,
+				reason,
+				action,
+				token,
+			}));
+			console.log(responses[i]);
+			if(i == names.length-1){
+				// clear cache since its now updated
+				delete localStorage.banlistCache;
+				banlistDisplayContainer.innerHTML = await renderStructuredlist(await getBanlist());
+			}
+		};
+	}
 })();
 
+function getUsernames(selector){
+	let names = [];
+	// split names by , then \n then trim away whitespace, strip names with spaces in em, add to array
+	document.querySelector(selector).value.split(",").forEach(name => name.trim().split("\n").forEach(name => ((name = name.trim()) && !name.includes(" ")) ? names.push(name) : ""));
+	// console.log(names);
+	return names;
+}
 async function getBanlist(){
-	if(localStorage.banlistCache){
-		let banlistCache = localStorage.banlistCache;
-		if(Date.now() - banlistCache.timestamp < 5*60*1000){
+	let banlistCache;
+	try{
+		banlistCache = JSON.parse(localStorage.banlistCache);
+	}catch(e){}
+	if(banlistCache){
+		if(Date.now() - banlistCache.timestamp < 30*1000){ // cache for 30 seconds
 			console.log("Serving cached banlist");
 			return banlistCache.data;
 		} else {
@@ -23,17 +85,20 @@ async function getBanlist(){
 		console.log("Getting banlist")
 		let banlist = await getJSON("/api/playerManager/bannedPlayers");
 		
-		localStorage.banlistCache = {
+		localStorage.banlistCache = JSON.stringify({
 			timestamp: Date.now(),
 			data: banlist,
-		}
+		});
 		return banlist;
 	}
 }
 async function getWhitelist(){
-	if(localStorage.whitelistCache){
-		let whitelistCache = localStorage.whitelistCache;
-		if(Date.now() - whitelistCache.timestamp < 5*60*1000){
+	let whitelistCache;
+	try{
+		whitelistCache = JSON.parse(localStorage.whitelistCache);
+	}catch(e){}
+	if(whitelistCache){
+		if(Date.now() - whitelistCache.timestamp < 30*1000){ // cache for 30 seconds
 			console.log("Serving cached whitelist");
 			return whitelistCache.data;
 		} else {
@@ -45,16 +110,19 @@ async function getWhitelist(){
 		console.log("Getting whitelist")
 		let whitelist = await getJSON("/api/playerManager/whitelistedPlayers");
 		
-		localStorage.whitelistCache = {
+		localStorage.whitelistCache = JSON.stringify({
 			timestamp: Date.now(),
 			data: whitelist,
-		}
+		});
 		return whitelist;
 	}
 }
 async function getPlayerList(){
-	if(localStorage.playerListCache){
-		let playerListCache = localStorage.playerListCache;
+	let playerListCache
+	try {
+		playerListCache = JSON.parse(localStorage.playerListCache);
+	} catch(e){}
+	if(playerListCache){
 		if(Date.now() - playerListCache.timestamp < 5*60*1000){
 			console.log("Serving cached playerlist");
 			return playerListCache.data;
@@ -68,41 +136,40 @@ async function getPlayerList(){
 		// get new playerList and cache it
 		let playerList = await getJSON("/api/playerManager/playerList");
 		
-		localStorage.playerListCache = {
+		localStorage.playerListCache = JSON.stringify({
 			timestamp: Date.now(),
 			data: playerList,
-		}
+		});
 		return playerList;
 	}
 }
-async function renderStructuredlist(list){
+async function renderStructuredlist(list, {tableClass, trClass, tdClass} = {}){
 	let cols = [];
 	list.forEach((obj, i) => {
 		for(let k in obj){
 			if(!cols.includes(k)) cols.push(k);
 		}
 	});
-	let html = "<table><tr>";
+	let html = `<table class="${tableClass || ""}"><tr class="${trClass || ""}">`;
 	cols.forEach(col => {
-		html += `<td>${col}</td>`;
+		html += `<td class="${tdClass || ""}">${col}</td>`;
 	});
 	html += "</tr>"
 	list.forEach(obj => {
-		html += `<tr>`;
+		html += `<tr class="${trClass || ""}">`;
 		cols.forEach(col => {
-			html += `<td>${k}</td>`;
+			html += `<td class="${tdClass || ""}">${obj[col]}</td>`;
 		});
 		html += "</tr>";
 	});
 
 	html += "</table>";
-	console.log(html)
 	return html;
 }
 async function renderStringArray(data, {tableClass, trClass, tdClass} = {}){
-	let html = `<table class="${tableClass || ""}"><tr class="${trClass || ""}>`;
+	let html = `<table class="${tableClass || ""}"><tr class="${trClass || ""}"><td class="${trClass || ""}">Name</td></tr>`;
 	data.forEach(elem => {
-		html += `<td class="${tdClass || ""}> ${elem} </td>`;
+		html += `<tr class="${trClass || ""}"><td class="${tdClass || ""}"> ${elem} </td></tr>`;
 	});
-	return html + "</tr></table>";
+	return html + "</table>";
 }

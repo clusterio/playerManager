@@ -9,6 +9,8 @@ const sanitizer = require('sanitizer');
 
 const pmSockets = [];
 const database = getDatabaseSync("database/playerManager.json");
+database.whitelist = getDatabaseSync("database/whitelist.json").whitelist || [];
+database.banlist = getDatabaseSync("database/banlist.json").banlist || [];
 
 class masterPlugin {
 	constructor({config, pluginConfig, pluginPath, socketio, express}){
@@ -41,8 +43,8 @@ class masterPlugin {
 			]
 		}
 		
-		this.whitelist = [];
-		this.banlist = [];
+		this.whitelist = database.whitelist || [];
+		this.banlist = database.banlist || [];
 		this.managedPlayers = database.managedPlayers || [];
 		this.users = database.users || [];
 		this.clients = {};
@@ -360,6 +362,7 @@ class masterPlugin {
 					});
 				}
 			} else {
+				console.log("nok")
 				res.send({
 					ok:false,
 					msg:"Invalid parameters, please send {factorioName, action[add|remove], token}",
@@ -401,13 +404,15 @@ class masterPlugin {
 					let pardonedPlayers = [];
 					indexes.forEach(i => {
 						let ban = this.banlist[i];
-						this.broadcastCommand(`/banlist remove ${ban.factorioName}`);
-						pardonedPlayers.push(this.banlist.splice(i, 1)[0]);
+						this.broadcastCommand(`/unban ${ban.factorioName}`);
+						pardonedPlayers.push(ban.factorioName);
+						this.banlist.splice(i, 1)
 					});
 					res.send({
 						ok:true,
 						msg:`Pardoned player(s) ${pardonedPlayers.join(", ")}`,
 					});
+					console.log(`Pardoned player(s) ${pardonedPlayers.join(", ")}`);
 				}
 			} else {
 				res.send({
@@ -484,7 +489,7 @@ class masterPlugin {
 					}
 				} else if(Date.now() > session.expiryDate){
 					// remove expired session
-					console.log("Removed session on timeout")
+					console.log(`Removed session on timeout: ${session.token}`);
 					user.sessions.splice(o, 1);
 				}
 			}
@@ -495,6 +500,8 @@ class masterPlugin {
 		database.managedPlayers = this.managedPlayers;
 		database.users = this.users;
 		await saveDatabase("database/playerManager.json", database);
+		await saveDatabase("database/whitelist.json", {whitelist: this.whitelist});
+		await saveDatabase("database/banlist.json", {banlist: this.banlist});
 		return;
 	}
 	pollForPlayers(socket, instanceID){

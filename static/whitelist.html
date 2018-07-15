@@ -21,12 +21,33 @@
 					width:200px;
 					height:100px;
 				}
+				#banReason {
+					color:black;
+					width:200px;
+				}
+				input + .slider {
+					background-color: #2196F3; /* light blue color */
+				}
+				input:checked + .slider {
+					background-color: red;
+				}
+				#userActionField > span {
+				}
 			</style>
 			<div id="userActionField">
 				<textarea autofocus placeholder="Comma/newline seperated usernames"></textarea>
 				<br>
-				<input type="button" value="Whitelist">
-				<input type="button" value="ban">
+				<input type="text" placeholder="Ban reason (required)" id="banReason"></input>
+				<br>
+				<span>Add</span>
+				<label class="switch">
+					<input type="checkbox" id="removeSlider">
+					<span class="slider"></span>
+				</label>
+				<span>remove</span>
+				<br>
+				<input type="button" value="Whitelist" id="submitWhitelist">
+				<input type="button" value="ban" id="submitBan">
 			</div>
 			<div class="twoColContainer">
 				<div id="whitelistDisplayContainer" class="playerManagerSplitContainer twoColChildContainer">

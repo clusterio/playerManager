@@ -72,10 +72,10 @@
 }
 .twoColChildContainer {
 	width: 50%;
-	height:100px;
+	/* height:100px; */
 	float:left;
 	/* display: inline-block; */
-	background-color:red;
+	/* background-color:red; */
 }
 .twoColContainer {
 	width:100%;

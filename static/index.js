@@ -7,8 +7,11 @@
 })();
 
 async function getPlayerList(){
-	if(localStorage.playerListCache){
-		let playerListCache = localStorage.playerListCache;
+	let playerListCache
+	try {
+		playerListCache = JSON.parse(localStorage.playerListCache);
+	} catch(e){}
+	if(playerListCache){
 		if(Date.now() - playerListCache.timestamp < 5*60*1000){
 			console.log("Serving cached playerlist");
 			return playerListCache.data;
@@ -22,10 +25,10 @@ async function getPlayerList(){
 		// get new playerList and cache it
 		let playerList = await getJSON("/api/playerManager/playerList");
 		
-		localStorage.playerListCache = {
+		localStorage.playerListCache = JSON.stringify({
 			timestamp: Date.now(),
 			data: playerList,
-		}
+		});
 		return playerList;
 	}
 }

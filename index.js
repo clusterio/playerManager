@@ -19,6 +19,29 @@ module.exports = class remoteCommands {
 				console.log(e);
 			}
 		});
+		
+		// sync whitelist/bans with master
+		(async ()=>{
+			let bans = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/bannedPlayers`);
+			let whitelist = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/whitelistedPlayers`);
+			console.log(bans.body)
+			console.log(whitelist.body)
+			messageInterface("/whitelist clear");
+			messageInterface("/banlist clear");
+			messageInterface("/silent-command game.print('Cleared whitelist and banlist')");
+			console.log("/log Cleared whitelist and banlist");
+			
+			await sleep(5);
+			
+			bans.body.forEach(ban => {
+				messageInterface(`/ban ${ban.factorioName} ${ban.reason}`);
+			});
+			whitelist.body.forEach(name => {
+				let cmd = `/whitelist add ${name}`
+				messageInterface(cmd);
+				console.log(cmd);
+			});
+		})().catch(e => console.log(e));
 	}
 	async getCommand(file){
 		this.commandCache = this.commandCache || {};
@@ -66,4 +89,9 @@ module.exports = class remoteCommands {
 			}
 		});
 	}
+}
+async function sleep(s){
+	return new Promise((resolve, reject) => {
+		setTimeout(resolve, s*1000);
+	});
 }
