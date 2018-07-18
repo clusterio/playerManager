@@ -31,26 +31,25 @@ module.exports = class remoteCommands {
 				let mainCode = await this.getSafeLua("sharedPlugins/playerManager/lua/playerTracking.lua");
 				if(mainCode) var returnValue = await messageInterface("/silent-command remote.call('hotpatch', 'update', '"+pluginConfig.name+"', '"+pluginConfig.version+"', '"+mainCode+"')");
 				if(returnValue) console.log(returnValue);
-				this.messageInterface(`/c remote.call("playerManager", "resetInvImportQueue")`);
+				this.messageInterface(`/silent-command remote.call("playerManager", "resetInvImportQueue")`);
 				
 				let syncInventory = async ()=>{
-					let playerName = await messageInterface(`/c remote.call("playerManager", "getImportTask")`);
+					let playerName = await messageInterface(`/silent-command remote.call("playerManager", "getImportTask")`);
 					playerName = playerName.trim();
-					console.log(`I was asked to download ${playerName}'s inventory`);
-					
-					// set inventory
-					let playerData = (await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/playerList`)).body;
-					playerData.forEach(player => {
-						if(player.name == playerName){
-							if(player.inventory){
-								messageInterface(`/c remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}')`);
+					if(playerName){
+						console.log(`Downloading ${playerName}'s inventory`);
+						// set inventory
+						let playerData = (await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/playerList`)).body;
+						playerData.forEach(player => {
+							if(player.name == playerName){
+								if(player.inventory){
+									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}')`);
+								}
 							}
-						}
-					});
-					// let playerInv = ""
+						});
+					}
 				}
-				setTimeout(syncInventory, 500);
-				setInterval(syncInventory,5000);
+				setInterval(syncInventory, 2000);
 			}
 			
 			// sync whitelist/bans with master

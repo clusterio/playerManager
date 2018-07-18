@@ -81,20 +81,32 @@ remote.add_interface("playerManager", {
 	getImportTask = function()
 		if #global.playersToImport >= 1 then
 			local playerName = table.remove(global.playersToImport, 1)
-			rcon.print(playerName)
-			game.print("Downloading account for "..playerName)
+			-- rcon.print(playerName)
+			game.print("Downloading account for "..playerName.."...")
 		end
 	end,
 	importInventory = function(playerName, invData)
 		local player = game.players[playerName]
 		if player then
-			game.print(playerName)
-			game.print(invData)
 			local ok, invTable = serpent.load(invData)
-			local playerMainInv = player.get_inventory(defines.inventory.player_main)
-			local playerMainInvContents = invTable[1]
 			
-			deserialize_inventory(playerMainInv, playerMainInvContents)
+			-- 1: Main inventory
+			deserialize_inventory(player.get_inventory(defines.inventory.player_main), invTable[1])
+			-- 2: wooden chest, iron chest. (quickbar)
+			deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
+			-- 3: pistol.
+			deserialize_inventory(player.get_inventory(defines.inventory.player_guns), invTable[3])
+			-- 4: Ammo.
+			deserialize_inventory(player.get_inventory(defines.inventory.player_ammo), invTable[4])
+			-- 5: armor.
+			deserialize_inventory(player.get_inventory(defines.inventory.player_armor), invTable[5])
+			-- 6: pickaxe.
+			deserialize_inventory(player.get_inventory(defines.inventory.player_tools), invTable[6])
+			-- 7: nil.
+			-- 8: express-transport-belt (trash slots)
+			deserialize_inventory(player.get_inventory(defines.inventory.player_trash), invTable[8])
+			
+			player.print("Inventory synchronized.")
 		else
 			game.print("Player "..playerName.." left before they could get their inventory!")
 		end
