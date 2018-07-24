@@ -129,7 +129,7 @@ module.exports = class remoteCommands {
                     // split content into lines
 					contents = contents.split(/\r?\n/);
 
-					// join those lines after making them save again
+					// join those lines after making them safe again
 					contents = contents.reduce((acc, val) => {
                         val = val.replace(/\\/g ,'\\\\');
                         // remove leading and trailing spaces

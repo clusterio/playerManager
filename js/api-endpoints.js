@@ -7,6 +7,16 @@ module.exports = masterPlugin =>{
 	masterPlugin.app.get("/api/playerManager/playerList", (req,res) => {
 		res.send(masterPlugin.managedPlayers);
 	});
+	masterPlugin.app.get("/api/playerManager/usernamesByPlayer", (req,res) => {
+		let usernamesByPlayer = {};
+		for(let i in masterPlugin.users){
+			let user = masterPlugin.users[i];
+			if(user.factorioName){
+				usernamesByPlayer[user.factorioName] = user.name;
+			}
+		}
+		res.send(usernamesByPlayer);
+	});
 	// manage web interface users
 	masterPlugin.app.post("/api/playerManager/register", async (req,res) => {
 		// do some basic input sanitization, not that its worth much

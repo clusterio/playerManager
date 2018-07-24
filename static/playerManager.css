@@ -70,6 +70,13 @@
 .playerManagerMainContainer {
 	padding-top:50px;
 }
+.playerManagerMainContainer a > h2 {
+	color:#FF7200;
+	transition: 0.15s all;
+}
+.playerManagerMainContainer a > h2:hover {
+	color: white;
+}
 .twoColChildContainer {
 	width: 50%;
 	/* height:100px; */
