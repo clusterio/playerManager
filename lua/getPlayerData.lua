@@ -1,4 +1,4 @@
--- Misc functions for serializing stuff
+--[[Misc functions for serializing stuff]]
 local inventory_types = {}
 do
     local map = {}
@@ -44,7 +44,7 @@ local function serialize_equipment_grid(grid)
 		ys = ys,
 	}
 end
--- serialize an inventory
+--[[ serialize an inventory ]]
 local function serialize_inventory(inventory)
 	local filters
 	if inventory.supports_filters() then
