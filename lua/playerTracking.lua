@@ -81,7 +81,7 @@ remote.add_interface("playerManager", {
 	getImportTask = function()
 		if #global.playersToImport >= 1 then
 			local playerName = table.remove(global.playersToImport, 1)
-			-- rcon.print(playerName)
+			rcon.print(playerName)
 			game.print("Downloading account for "..playerName.."...")
 		end
 	end,
