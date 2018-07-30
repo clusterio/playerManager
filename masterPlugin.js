@@ -161,7 +161,7 @@ class masterPlugin {
 							"description",
 						],
 					};
-					if(user.admin){
+					if((user.admin && typeof user.admin == "boolean") || (user.admin == "true" && typeof user.admin == "string")){
 						permissions.all.read.push("email");
 						permissions.all.write.push("email");
 						permissions.all.write.push("password");
