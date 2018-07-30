@@ -111,7 +111,7 @@ class masterPlugin {
 	}
 	async broadcastCommand(command){
 		let returnValues = [];
-		this.pmSockets.forEach(socket => socket.emit("runCommand", {
+		pmSockets.forEach(socket => socket.emit("runCommand", {
 			// commandID:Math.random(),
 			command,
 		}));
