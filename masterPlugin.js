@@ -111,13 +111,10 @@ class masterPlugin {
 	}
 	async broadcastCommand(command){
 		let returnValues = [];
-		for(let instanceID in this.slaves){
-			let slave = this.slaves[instanceID];
-			slave.emit("runCommand", {
-				// commandID:Math.random(),
-				command,
-			});
-		};
+		this.pmSockets.forEach(socket => socket.emit("runCommand", {
+			// commandID:Math.random(),
+			command,
+		}));
 		return returnValues;
 	}
 	findInArray(key, value, array){
@@ -272,13 +269,6 @@ class masterPlugin {
 }
 module.exports = masterPlugin;
 
-function arrayRemoveDuplicates(array){
-	let newArray = [];
-	array.forEach(value => {
-		if(!newArray.includes(value)) newArray.push(value);
-	});
-	return newArray;
-}
 function getDatabaseSync(path){
 	let db;
 	try {

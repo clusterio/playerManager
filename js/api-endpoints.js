@@ -2,6 +2,9 @@
 const bcrypt = require("bcrypt-promise");
 const crypto = require("crypto");
 const base64url = require('base64url');
+const sanitizer = require('sanitizer');
+
+const util = require("./util.js");
 
 module.exports = masterPlugin =>{
 	masterPlugin.app.get("/api/playerManager/playerList", (req,res) => {
@@ -102,7 +105,7 @@ module.exports = masterPlugin =>{
 			// get permissions depending on token and other permission systems
 			let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
 			
-			let user = masterPlugin.users[masterPlugin.findInArray("name",req.body.name,masterPlugin.users)];
+			let user = masterPlugin.users[util.findInArray("name",req.body.name,masterPlugin.users)];
 			if(user){
 				let response = {
 					ok:true,
@@ -145,11 +148,12 @@ module.exports = masterPlugin =>{
 		&& typeof req.body.fieldName === "string"
 		&& req.body.fieldValue){
 			let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
-			
+
 			try{// this statement fails whenever we request a modification to a user we don't have any explicit permissions to
-			var writePermissions = arrayRemoveDuplicates(permissions.all.write.concat(permissions.user[req.body.name].write))} catch(e){}
+				var writePermissions = util.arrayRemoveDuplicates(permissions.all.write.concat(permissions.user[req.body.name].write))
+			} catch(e){console.log(e)}
 			if(writePermissions.includes(req.body.fieldName)){
-				let userIndex = masterPlugin.findInArray("name", req.body.name, masterPlugin.users);
+				let userIndex = util.findInArray("name", req.body.name, masterPlugin.users);
 				if(req.body.fieldName === "password"){
 					let startTime = Date.now()
 					let hash = await bcrypt.hash(req.body.fieldValue, 12);
@@ -190,7 +194,7 @@ module.exports = masterPlugin =>{
 					msg:"Passwords do not match",
 				});
 			} else {
-				let userIndex = masterPlugin.findInArray("name", req.body.name, masterPlugin.users);
+				let userIndex = util.findInArray("name", req.body.name, masterPlugin.users);
 				let user = masterPlugin.users[userIndex];
 				if(await bcrypt.compare(req.body.password, user.password)){
 					let deletedData = masterPlugin.users.splice(userIndex, 1);
@@ -267,7 +271,7 @@ module.exports = masterPlugin =>{
 		&& typeof req.body.token == "string"){
 			let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
 			if(req.body.action == "add" && permissions.cluster.includes("banlist")){
-				let indexes = masterPlugin.findInArray("factorioName", req.body.factorioName, masterPlugin.banlist);
+				let indexes = util.findInArray("factorioName", req.body.factorioName, masterPlugin.banlist);
 				if(indexes.length == 1){
 					// update an existing ban
 					masterPlugin.banlist[indexes[0]].reason = req.body.reason;
@@ -290,7 +294,7 @@ module.exports = masterPlugin =>{
 					});
 				},1000);
 			} else if(req.body.action == "remove" && permissions.cluster.includes("removeBanlist")){
-				let indexes = masterPlugin.findInArray("factorioName", req.body.factorioName, masterPlugin.banlist)
+				let indexes = util.findInArray("factorioName", req.body.factorioName, masterPlugin.banlist)
 				let pardonedPlayers = [];
 				indexes.forEach(i => {
 					let ban = masterPlugin.banlist[i];
