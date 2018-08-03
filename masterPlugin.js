@@ -250,7 +250,6 @@ class masterPlugin {
 		});
 	}
 	async handleChatLine(line, instanceID){
-		console.log(line.indexOf("!playerManager"))
 		// chat lines are handled by ./commandHandler.js
 		let cmdHandler = require("./commandHandler.js");
 		let commandHandler = new cmdHandler(this, (command, instanceID) => {
