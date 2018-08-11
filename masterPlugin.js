@@ -143,6 +143,7 @@ class masterPlugin {
 				
 			},
 		};
+		let authenticatedUser;
 		for(let i in users){
 			let user = users[i];
 			for(let o in user.sessions){
@@ -150,6 +151,7 @@ class masterPlugin {
 				
 				if(session.token === token
 				&& Date.now() < session.expiryDate){
+					authenticatedUser = user;
 					permissions.user[user.name] = {
 						read: [
 							"email",
@@ -178,6 +180,14 @@ class masterPlugin {
 				}
 			}
 		}
+		
+		// run permissions middleware from other plugins
+		for(let i in this.masterPlugins){
+			let plugin = this.masterPlugins[i];
+			if(plugin.main.onPlayerManagerGetPermissions && typeof plugin.main.onPlayerManagerGetPermissions){
+				permissions = await plugin.main.onPlayerManagerGetPermissions({permissions, token, users, user});
+			}
+		}
 		return permissions;
 	}
 	async onExit(){
@@ -188,6 +198,9 @@ class masterPlugin {
 		await saveDatabase("database/whitelist.json", {whitelist: this.whitelist});
 		await saveDatabase("database/banlist.json", {banlist: this.banlist});
 		return;
+	}
+	async onLoadFinished({plugins}){
+		this.masterPlugins = plugins;
 	}
 	pollForPlayers(socket, instanceID){
 		// console.log("Polling for players")
