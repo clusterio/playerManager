@@ -72,7 +72,7 @@ end)
 script.on_event(defines.events.on_player_joined_game, function(event)
 	local player = game.players[event.player_index]
 	table.insert(global.playersToImport, player.name)
-	player.print("Registered you joining the game, syncing account now...")
+	player.print("Registered you joining the game, preparing profile sync...")
 end)
 
 -- Register and handle events
@@ -85,13 +85,11 @@ remote.add_interface("playerManager", {
 			game.print("Downloading account for "..playerName.."...")
 		end
 	end,
-	importInventory = function(playerName, invData)
+	importInventory = function(playerName, invData, forceName, spectator, admin, color, chat_color)
 		local player = game.players[playerName]
 		if player then
 			local ok, invTable = serpent.load(invData)
 			
-			-- 1: Main inventory
-			deserialize_inventory(player.get_inventory(defines.inventory.player_main), invTable[1])
 			-- 2: wooden chest, iron chest. (quickbar)
 			deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
 			-- 3: pistol.
@@ -105,6 +103,14 @@ remote.add_interface("playerManager", {
 			-- 7: nil.
 			-- 8: express-transport-belt (trash slots)
 			deserialize_inventory(player.get_inventory(defines.inventory.player_trash), invTable[8])
+			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
+			deserialize_inventory(player.get_inventory(defines.inventory.player_main), invTable[1])
+			
+			player.force = forceName
+			player.spectator = spectator
+			player.admin = admin
+			player.color = color
+			player.chat_color = chat_color
 			
 			player.print("Inventory synchronized.")
 		else
