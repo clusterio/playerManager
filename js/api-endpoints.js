@@ -79,6 +79,7 @@ module.exports = masterPlugin =>{
 							name: user.name,
 						}
 						masterPlugin.users[i].sessions.push(session);
+						res.cookie('token', session.token, { maxAge: 1000*60*60*24 });
 						res.send({
 							ok:true,
 							msg:"Successfully logged in",

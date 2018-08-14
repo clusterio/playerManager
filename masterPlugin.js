@@ -125,6 +125,9 @@ class masterPlugin {
 		return indexes;
 	}
 	async getPermissions(token, users){
+		if(!users){
+			users = this.users;
+		}
 		let permissions = {
 			all:{
 				read: [
@@ -185,7 +188,7 @@ class masterPlugin {
 		for(let i in this.masterPlugins){
 			let plugin = this.masterPlugins[i];
 			if(plugin.main.onPlayerManagerGetPermissions && typeof plugin.main.onPlayerManagerGetPermissions){
-				permissions = await plugin.main.onPlayerManagerGetPermissions({permissions, token, users, user});
+				permissions = await plugin.main.onPlayerManagerGetPermissions({permissions, token, users, user: authenticatedUser});
 			}
 		}
 		return permissions;
@@ -199,7 +202,7 @@ class masterPlugin {
 		await saveDatabase("database/banlist.json", {banlist: this.banlist});
 		return;
 	}
-	async onLoadFinished({plugins}){
+	async onLoadFinish({plugins}){
 		this.masterPlugins = plugins;
 	}
 	pollForPlayers(socket, instanceID){
