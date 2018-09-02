@@ -114,7 +114,7 @@ for index, player in pairs(game.players) do
 	playerData = playerData .. "|name:"..player.name.."~index:"..index.."~connected:"..tostring(player.connected)
 	playerData = playerData .. "~r:"..tostring(player.color.r).."~g:"..tostring(player.color.g).."~b:"..tostring(player.color.b).."~a:"..tostring(player.color.a)
 	playerData = playerData .. "~cr:"..tostring(player.chat_color.r).."~cg:"..tostring(player.chat_color.g).."~cb:"..tostring(player.chat_color.b).."~ca:"..tostring(player.chat_color.a)
-	
+	playerData = playerData .. "~tag:"..tostring(player.tag)
 	--[[ Collect players system information ]]
 	playerData = playerData .. "~displayWidth:"..player.display_resolution.width.."~displayHeight:"..player.display_resolution.height.."~displayScale:"..player.display_scale
 	

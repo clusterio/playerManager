@@ -85,7 +85,7 @@ remote.add_interface("playerManager", {
 			game.print("Downloading account for "..playerName.."...")
 		end
 	end,
-	importInventory = function(playerName, invData, forceName, spectator, admin, color, chat_color)
+	importInventory = function(playerName, invData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
 		if player then
 			local ok, invTable = serpent.load(invData)
@@ -111,6 +111,7 @@ remote.add_interface("playerManager", {
 			player.admin = admin
 			player.color = color
 			player.chat_color = chat_color
+			player.tag = tag
 			
 			player.print("Inventory synchronized.")
 		else

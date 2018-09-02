@@ -29,7 +29,7 @@ module.exports = class remoteCommands {
 			this.messageInterface("Hotpach installation status: "+hotpatchInstallStatus);
 			if(hotpatchInstallStatus){
 				let mainCode = await this.getSafeLua("sharedPlugins/playerManager/lua/playerTracking.lua");
-				if(mainCode) var returnValue = await messageInterface("/silent-command remote.call('hotpatch', 'update', '"+pluginConfig.name+"', '"+pluginConfig.version+"', '"+mainCode+"')");
+			if(mainCode) var returnValue = await messageInterface(`/silent-command remote.call('hotpatch', 'update', '${pluginConfig.name}', '${pluginConfig.version}', '${mainCode}')`);
 				if(returnValue) console.log(returnValue);
 				this.messageInterface(`/silent-command remote.call("playerManager", "resetInvImportQueue")`);
 				
@@ -43,7 +43,7 @@ module.exports = class remoteCommands {
 						playerData.forEach(player => {
 							if(player.name == playerName){
 								if(player.inventory){
-									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}})`);
+									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
 								}
 							}
 						});
