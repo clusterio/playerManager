@@ -15,8 +15,10 @@ module.exports = class remoteCommands {
 		});
 		this.socket.on("playerManagerGetPlayers", async data => {
 			try {
-				let command = await this.getCommand("sharedPlugins/playerManager/lua/getPlayerData.lua");
-				let playerData = await this.messageInterface("/silent-command "+command);
+				// let command = await this.getCommand("sharedPlugins/playerManager/lua/getPlayerData.lua");
+				// let playerData = await this.messageInterface("/silent-command "+command);
+				let playerData = await this.messageInterface(`/silent-command remote.call("playerManager", "exportPlayers")`);
+				if(playerData) messageInterface("Exported players leaving the server")
 				this.socket.emit("playerManagerSetPlayerdata", playerData.replace(/(\r\n\t|\n|\r\t)/gm, ""));
 			} catch(e){
 				console.log(e);
@@ -29,7 +31,7 @@ module.exports = class remoteCommands {
 			this.messageInterface("Hotpach installation status: "+hotpatchInstallStatus);
 			if(hotpatchInstallStatus){
 				let mainCode = await this.getSafeLua("sharedPlugins/playerManager/lua/playerTracking.lua");
-			if(mainCode) var returnValue = await messageInterface(`/silent-command remote.call('hotpatch', 'update', '${pluginConfig.name}', '${pluginConfig.version}', '${mainCode}')`);
+				if(mainCode) var returnValue = await messageInterface(`/silent-command remote.call('hotpatch', 'update', '${pluginConfig.name}', '${pluginConfig.version}', '${mainCode}')`);
 				if(returnValue) console.log(returnValue);
 				this.messageInterface(`/silent-command remote.call("playerManager", "resetInvImportQueue")`);
 				

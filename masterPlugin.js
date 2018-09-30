@@ -232,7 +232,11 @@ class masterPlugin {
 				player = player.split(`~`);
 				player.forEach(kv => {
 					kv = kv.split(":");
-					playerData[kv[0]] = kv[1].trim();
+					if(kv[1] === undefined || kv[0] === undefined){
+						console.log(new Error(`Something is wrong! Key:${kv[0]} Value:${kv[1]}`));
+					} else {
+						playerData[kv[0]] = kv[1].trim();
+					}
 				});
 				for(let k in sharedData){
 					playerData[k] = sharedData[k];
