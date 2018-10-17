@@ -18,7 +18,8 @@ module.exports = class remoteCommands {
 				// let command = await this.getCommand("sharedPlugins/playerManager/lua/getPlayerData.lua");
 				// let playerData = await this.messageInterface("/silent-command "+command);
 				let playerData = await this.messageInterface(`/silent-command remote.call("playerManager", "exportPlayers")`);
-				if(playerData) messageInterface("Exported players leaving the server")
+				/// this log statement is broken; playerData might be blank but still true (or something)
+				// if(playerData) messageInterface("Exported players leaving the server")
 				this.socket.emit("playerManagerSetPlayerdata", playerData.replace(/(\r\n\t|\n|\r\t)/gm, ""));
 			} catch(e){
 				console.log(e);
