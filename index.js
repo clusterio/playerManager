@@ -58,8 +58,11 @@ module.exports = class remoteCommands {
 			// sync whitelist/bans with master
 			let bans = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/bannedPlayers`);
 			let whitelist = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/whitelistedPlayers`);
-			console.log(bans.body)
-			console.log(whitelist.body)
+			if(!bans || !bans.body || !bans.body.forEach || !whitelist || !whitelist.body || !whitelist.body.forEach){
+				console.error(new Error("ERROR: PLAYERMANAGER NOT FOUND ON SERVER, NOT IMPORTING WHITELIST AND BANLIST. THIS CONFIGURATION IS UNSUPPORTED AND WILL CAUSE TROUBLE"))
+				return false;
+			}
+			
 			messageInterface("/whitelist clear");
 			messageInterface("/banlist clear");
 			messageInterface("/silent-command game.print('Cleared whitelist and banlist')");
