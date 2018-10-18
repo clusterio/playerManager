@@ -10,8 +10,6 @@ local function deserialize_grid(grid, data)
 end
 
 local function deserialize_inventory(inventory, data)
-	inventory.clear()
-	
     local item_names, item_counts, item_durabilities,
     item_ammos, item_exports, item_labels, item_grids
     = data.item_names, data.item_counts, data.item_durabilities,
@@ -238,6 +236,23 @@ remote.add_interface("playerManager", {
 		if player then
 			local ok, invTable = serpent.load(invData)
 			
+			-- sync misc details
+			player.force = forceName
+			player.spectator = spectator
+			player.admin = admin
+			player.color = color
+			player.chat_color = chat_color
+			player.tag = tag
+			
+			-- Clear old inventories
+			player.get_inventory(defines.inventory.player_quickbar).clear()
+			player.get_inventory(defines.inventory.player_guns).clear()
+			player.get_inventory(defines.inventory.player_ammo).clear()
+			player.get_inventory(defines.inventory.player_armor).clear()
+			player.get_inventory(defines.inventory.player_tools).clear()
+			player.get_inventory(defines.inventory.player_trash).clear()
+			player.get_inventory(defines.inventory.player_main).clear()
+			
 			-- 2: wooden chest, iron chest. (quickbar)
 			deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
 			-- 3: pistol.
@@ -253,13 +268,6 @@ remote.add_interface("playerManager", {
 			deserialize_inventory(player.get_inventory(defines.inventory.player_trash), invTable[8])
 			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
 			deserialize_inventory(player.get_inventory(defines.inventory.player_main), invTable[1])
-			
-			player.force = forceName
-			player.spectator = spectator
-			player.admin = admin
-			player.color = color
-			player.chat_color = chat_color
-			player.tag = tag
 			
 			player.print("Inventory synchronized.")
 		else
