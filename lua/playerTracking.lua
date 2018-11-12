@@ -27,7 +27,9 @@ local function deserialize_inventory(inventory, data)
             slot.ammo = item_ammos[idx]
         end
         local label = item_labels[idx]
-        if label then
+		-- We got a crash on line 1 of this IF statement with AAI programmable vehicles's unit-remote-control item where label = {allow_manual_label_change = true}
+		-- we attempt to fix this by checking slot.is_item_with_label, but we have no idea if this property is set properly. Label syncing might be broken.
+        if label and slot.is_item_with_label then
             slot.label = label.label
             slot.label_color = label.label_color
             slot.allow_manual_label_change = label.allow_manual_label_change
@@ -247,11 +249,12 @@ remote.add_interface("playerManager", {
 			-- Clear old inventories
 			player.get_inventory(defines.inventory.player_quickbar).clear()
 			player.get_inventory(defines.inventory.player_guns).clear()
-			player.get_inventory(defines.inventory.player_ammo).clear()
 			player.get_inventory(defines.inventory.player_armor).clear()
 			player.get_inventory(defines.inventory.player_tools).clear()
 			player.get_inventory(defines.inventory.player_trash).clear()
 			player.get_inventory(defines.inventory.player_main).clear()
+			-- clear armor last to avoid inventory spilling
+			player.get_inventory(defines.inventory.player_ammo).clear()
 			
 			-- 2: wooden chest, iron chest. (quickbar)
 			deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
