@@ -18,9 +18,9 @@ class masterPlugin {
 		this.app = express;
 		
 		// load databases
-		const database = getDatabaseSync("database/playerManager.json");
-		this.whitelist = getDatabaseSync("database/whitelist.json").whitelist || [];
-		this.banlist = getDatabaseSync("database/banlist.json").banlist || [];
+		const database = getDatabaseSync(path.join(this.config.databaseDirectory, "playerManager.json"));
+		this.whitelist = getDatabaseSync(path.join(this.config.databaseDirectory, "whitelist.json")).whitelist || [];
+		this.banlist = getDatabaseSync(path.join(this.config.databaseDirectory, "banlist.json")).banlist || [];
 		this.managedPlayers = database.managedPlayers || [];
 		this.users = database.users || [];
 		
@@ -194,12 +194,13 @@ class masterPlugin {
 		return permissions;
 	}
 	async onExit(){
-		await saveDatabase("database/playerManager.json", {
+		console.log(path.join(this.config.databaseDirectory, "playerManager.json"))
+		await saveDatabase(path.join(this.config.databaseDirectory, "playerManager.json"), {
 			managedPlayers: this.managedPlayers,
 			users: this.users,
 		});
-		await saveDatabase("database/whitelist.json", {whitelist: this.whitelist});
-		await saveDatabase("database/banlist.json", {banlist: this.banlist});
+		await saveDatabase(path.join(this.config.databaseDirectory, "whitelist.json"), {whitelist: this.whitelist});
+		await saveDatabase(path.join(this.config.databaseDirectory, "banlist.json"), {banlist: this.banlist});
 		return;
 	}
 	async onLoadFinish({plugins}){
