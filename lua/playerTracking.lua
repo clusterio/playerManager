@@ -249,12 +249,12 @@ remote.add_interface("playerManager", {
 			-- Clear old inventories
 			player.get_inventory(defines.inventory.player_quickbar).clear()
 			player.get_inventory(defines.inventory.player_guns).clear()
-			player.get_inventory(defines.inventory.player_armor).clear()
+			player.get_inventory(defines.inventory.player_ammo).clear()
 			player.get_inventory(defines.inventory.player_tools).clear()
 			player.get_inventory(defines.inventory.player_trash).clear()
 			player.get_inventory(defines.inventory.player_main).clear()
 			-- clear armor last to avoid inventory spilling
-			player.get_inventory(defines.inventory.player_ammo).clear()
+			player.get_inventory(defines.inventory.player_armor).clear()
 			
 			-- 2: wooden chest, iron chest. (quickbar)
 			deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
