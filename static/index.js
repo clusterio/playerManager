@@ -20,13 +20,13 @@ async function renderPlayerlist(playerList){
 		} else {
 			html += "<h2>"+player.name+"</h2>";
 		}
+		Object.keys(player).forEach(key => {
+			if(key.includes("onlineTime") && !isNaN(Number(player[key]))){
+				player.onlineTimeTotal += Number(player[key]);
+			}
+		});
 		if(player.connected === "true"){
 			html += "<p>Online on "+await getInstanceName(player.instanceID)+"</p>";
-			Object.keys(player).forEach(key => {
-				if(key.includes("onlineTime") && !isNaN(Number(player[key]))){
-					player.onlineTimeTotal += Number(player[key]);
-				}
-			});
 			html += "<p>Playtime: "+(Math.floor((Number(player.onlineTime)+(Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
 		} else {
 			html += "<p>Offline</p>";

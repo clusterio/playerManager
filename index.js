@@ -101,7 +101,51 @@ module.exports = class remoteCommands {
 		}
 	}
 	async factorioOutput(data){
-		
+		try{ // these filters might not be good enough. Investigate whether it is possible for a non-admin user to write things that still goes through.
+		this.messageInterface(data)
+		if(data.includes("[BAN]")
+		&& data.includes("was banned by")
+		&& !data.includes("[CHAT]")
+		&& !data.includes("/c") && !data.includes("/silent-command")
+		// Try to weed out things that can lead to RCE vulnearabilities
+		&& !data.includes('"') && !data.includes("\\")){
+			// data = "2018-11-17 14:05:27 [BAN] James (not on map) was banned by Zr4g0n [Totally not a dragon!]. Reason: being lame."
+			let bannedName = data.split("[BAN] ")[1].split(" ")[0];
+			let banner = data.split("was banned by ")[1].split(" ")[0];
+			let reason = `${banner} banned ${bannedName} for ${data.split("Reason: ")[data.split("Reason: ").length-1]}`;
+			this.messageInterface(bannedName)
+			this.messageInterface(banner)
+			this.messageInterface(reason)
+			this.messageInterface("Im OK")
+			let banlist = (await needle("get", this.config.masterIP+":"+this.config.masterPort+"/api/playerManager/bannedPlayers")).body;
+			
+			// avoid banning players who are already banned
+			let playerIsAlreadyBannned = false;
+			console.log(banlist)
+			banlist.forEach(ban => {
+				if(ban.factorioName == bannedName) playerIsAlreadyBannned = true;
+			});
+			if(playerIsAlreadyBannned) return true;
+			
+			needle.post(this.config.masterIP+":"+this.config.masterPort+"/api/playerManager/banlist", {
+				factorioName: bannedName,
+				action: "add",
+				reason,
+				token: this.config.masterAuthToken,
+			}, (err, response) => {
+				if(err){
+					console.error(err);
+				} else if(response.statusCode != 200){
+					console.error(`Got code ${response.statusCode} when posting to /api/playerManager/banlist`);
+				} else {
+					if(response.ok){
+						this.messageInterface(`/c game.print("${reason}")`);
+						this.messageInterface(reason);
+					}
+					this.messageInterface(response.msg);
+				}
+			});
+		}} catch(e){console.log(e)}
 	}
 	getInstanceName(instanceID){
 		return new Promise((resolve, reject) => {

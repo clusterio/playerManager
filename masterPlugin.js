@@ -167,14 +167,7 @@ class masterPlugin {
 						],
 					};
 					if((user.admin && typeof user.admin == "boolean") || (user.admin == "true" && typeof user.admin == "string")){
-						permissions.all.read.push("email");
-						permissions.all.write.push("email");
-						permissions.all.write.push("password");
-						permissions.all.write.push("admin");
-						permissions.cluster.push("whitelist");
-						permissions.cluster.push("removeWhitelist");
-						permissions.cluster.push("banlist");
-						permissions.cluster.push("removeBanlist");
+						permissions = giveAdminPermissions(permissions);
 					}
 				} else if(Date.now() > session.expiryDate){
 					// remove expired session
@@ -183,7 +176,23 @@ class masterPlugin {
 				}
 			}
 		}
-		
+		if(token == this.config.masterAuthToken){
+			// The masterAuthToken overrides everything and always grants all permissions. Lets pretend this user is an admin.
+			permissions = giveAdminPermissions(permissions);
+			authenticatedUser = "master";
+		}
+		function giveAdminPermissions(permissions){
+			permissions.all.read.push("email");
+			permissions.all.read.push("factorioLinkToken");
+			permissions.all.write.push("email");
+			permissions.all.write.push("password");
+			permissions.all.write.push("admin");
+			permissions.cluster.push("whitelist");
+			permissions.cluster.push("removeWhitelist");
+			permissions.cluster.push("banlist");
+			permissions.cluster.push("removeBanlist");
+			return permissions;
+		}
 		// run permissions middleware from other plugins
 		for(let i in this.masterPlugins){
 			let plugin = this.masterPlugins[i];
