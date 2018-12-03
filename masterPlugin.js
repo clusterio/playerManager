@@ -24,6 +24,16 @@ class masterPlugin {
 		this.managedPlayers = database.managedPlayers || [];
 		this.users = database.users || [];
 		
+		// autosave databases
+		setInterval(()=>{
+			await saveDatabase(path.join(this.config.databaseDirectory, "playerManager.json"), {
+				managedPlayers: this.managedPlayers,
+				users: this.users,
+			});
+			await saveDatabase(path.join(this.config.databaseDirectory, "whitelist.json"), {whitelist: this.whitelist});
+			await saveDatabase(path.join(this.config.databaseDirectory, "banlist.json"), {banlist: this.banlist});
+		}, 1000*60*5);
+		
 		this.clients = {};
 		this.slaves = {};
 		
