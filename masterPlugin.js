@@ -25,7 +25,7 @@ class masterPlugin {
 		this.users = database.users || [];
 		
 		// autosave databases
-		setInterval(()=>{
+		setInterval(async ()=>{
 			await saveDatabase(path.join(this.config.databaseDirectory, "playerManager.json"), {
 				managedPlayers: this.managedPlayers,
 				users: this.users,
