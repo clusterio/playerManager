@@ -40,6 +40,9 @@ class masterPlugin {
 		// initialize web API
 		require("./js/api-endpoints.js")(this);
 		
+		// initialize token auth module
+		this.authenticate = require("./../../lib/authenticate.js")(config);
+		
 		// expose UI elements embedded in the master
 		this.ui = require("./js/ui.js").ui;
 		
@@ -186,7 +189,7 @@ class masterPlugin {
 				}
 			}
 		}
-		if(token == this.config.masterAuthToken){
+		if((await this.authenticate.check(token)).ok){
 			// The masterAuthToken overrides everything and always grants all permissions. Lets pretend this user is an admin.
 			permissions = giveAdminPermissions(permissions);
 			authenticatedUser = "master";
