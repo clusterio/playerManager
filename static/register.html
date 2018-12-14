@@ -7,14 +7,31 @@
 
 <body>
 	<%- include("./../../../static/sidebar.html") %>
-	<div id="body">
-		<div id="registrationFormContainer" class="formContainer">
-			<input id="registerName" type="text" placeholder="Username"></input><br>
-			<input id="registerEmail" type="email" placeholder="Email (optional)"></input><br>
-			<input id="registerPass" type="password" placeholder="Password"></input><br>
-			<input id="registerPass2" type="password" placeholder="Repeat password"></input><br>
-			<input id="registerSubmit" type="button" value="Register"></input><br>
-			<p id="registerStatus"></p>
+	<div id="body" class="container">
+		<div class="mt-4 mx-auto col-8">
+			<h1>Register</h1>
+			<div id="registerAlert" class="alert alert-primary mt-3 d-none" role="alert"></div>
+			<form id="register-form">
+				<div class="form-group">
+					<label for="registerName">Username</label>
+					<input type="text" class="form-control" id="registerName" aria-describedby="userHelp" placeholder="Username">
+					<small id="userHelp" class="form-text text-muted">Username does not need to be in-game name.</small>
+				</div>
+				<div class="form-group">
+					<label for="registerEmail">Email address</label>
+					<input type="email" class="form-control" id="registerEmail" aria-describedby="emailHelp" placeholder="Enter email">
+					<small id="emailHelp" class="form-text text-muted">Optional</small>
+				</div>
+				<div class="form-group">
+					<label for="registerPass">Password</label>
+					<input type="password" class="form-control" id="registerPass" placeholder="Password">
+				</div>
+				<div class="form-group">
+					<label for="registerPass2">Confirm Password</label>
+					<input type="password" class="form-control" id="registerPass2" placeholder="Confirm password">
+				</div>
+				<button type="submit" class="btn btn-primary btn-lg" id="registerSubmit" value="Register">Submit</button>
+			</form>
 		</div>
 	</div>
 </body>

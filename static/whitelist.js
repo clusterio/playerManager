@@ -12,7 +12,7 @@
 	
 	submitWhitelist.onclick = async () => {
 		let names = getUsernames("#userActionField > textarea");
-		let action = document.querySelector("#removeSlider").checked ? "remove" : "add";
+		let action = document.querySelector("#removeSlider").checked ? "add" : "remove" ;
 		let token = JSON.parse(localStorage.session).token;
 		
 		let responses = [];
@@ -38,7 +38,7 @@
 	submitBan.onclick = async () => {
 		let names = getUsernames("#userActionField > textarea");
 		let reason = document.querySelector("#banReason").value;
-		let action = document.querySelector("#removeSlider").checked ? "remove" : "add";
+		let action = document.querySelector("#removeSlider").checked ?  "add" : "remove";
 		let token = JSON.parse(localStorage.session).token;
 		
 		let responses = [];
