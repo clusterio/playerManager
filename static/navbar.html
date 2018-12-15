@@ -24,7 +24,7 @@
 			document.querySelector("#accountButton").innerHTML = "Login";
 			
 			document.querySelector("#logout").style.display = "none";
-			document.querySelector("#profileButton").style.display = "none";
+			document.querySelector("#profileButton").parentElement.style.display = "none";
 		} else {
 			document.querySelector("#profileButton").href = "/playerManager/profile?username="+name;
 			document.querySelector("#accountButton").href = "/playerManager/account?username="+name;
