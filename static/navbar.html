@@ -1,13 +1,13 @@
 <div id="currentUserBanner" class="navbar nav-pills nav-fill mt-2 border-0">
 	<script defer type="module" src="/playerManager/main.js"></script>
-	<div id="profileButton" class="nav-item p-3">
-		<a class="nav-link align-middle btn-primary"  href="/playerManager/profile">Profile</a>
+	<div class="nav-item p-3">
+		<a id="profileButton" class="nav-link align-middle btn-primary"  href="/playerManager/profile">Profile</a>
 	</div>
-	<div id="accountButton" class="nav-item p-3">
-		<a class="nav-link align-middle btn-primary"  href="/playerManager/account">Account</a>
+	<div class="nav-item p-3">
+		<a id="accountButton" class="nav-link align-middle btn-primary"  href="/playerManager/account">Account</a>
 	</div>
 	<div id="logout" class="nav-item p-3">
-		<a class="nav-link align-middle btn-primary" href="#">Logout</a>
+		<a  class="nav-link align-middle btn-primary" href="#">Logout</a>
 	</div>
 </div>
 	<script>
@@ -20,11 +20,11 @@
 			console.log("No token/name found in localStorage!");
 		}
 		if(!name){
-			document.querySelector("#accountButton a").href = "/playerManager/login";
-			document.querySelector("#accountButton a").innerHTML = "Login";
+			document.querySelector("#accountButton").href = "/playerManager/login";
+			document.querySelector("#accountButton").innerHTML = "Login";
 			
 			document.querySelector("#logout").style.display = "none";
-			document.querySelector("#profileButton").style.display = "none";
+			document.querySelector("#profileButton").parentElement.style.display = "none";
 		} else {
 			document.querySelector("#profileButton").href = "/playerManager/profile?username="+name;
 			document.querySelector("#accountButton").href = "/playerManager/account?username="+name;
