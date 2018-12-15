@@ -8,17 +8,19 @@ import {getUserFromPlayer, getPlayerList, getUserData, getSession, getToken, arr
 })();
 
 async function renderPlayerlist(playerList){
-	let html = "";
+	let html = '<div class="card-deck">';
+	let cardCount = 1;
 	for(let player in playerList){
 		player = playerList[player];
-		html += "<div>";
+		html += '<div class="card">' +
+			'		<div class="card-body">';
 		// check if this player has a profile
 		let username = await getUserFromPlayer(player.name);
-		console.log(username)
+		console.log(username);
 		if(username){
-			html += `<a href="/playerManager/profile?username=${username}"><h2>${player.name}</h2></a>`
+			html += `<h5 class="card-title"><a href="/playerManager/profile?username=${username}">${player.name}</a></h5>`
 		} else {
-			html += "<h2>"+player.name+"</h2>";
+			html += '<h5 class="card-title">'+player.name+'</h5>';
 		}
 		Object.keys(player).forEach(key => {
 			if(key.includes("onlineTime") && !isNaN(Number(player[key]))){
@@ -26,14 +28,23 @@ async function renderPlayerlist(playerList){
 			}
 		});
 		if(player.connected === "true"){
-			html += "<p>Online on "+await getInstanceName(player.instanceID)+"</p>";
+			html += ' <p class="card-text"><small class="text-muted">Online on '+await getInstanceName(player.instanceID)+"</small></p>";
 			html += "<p>Playtime: "+(Math.floor((Number(player.onlineTime)+(Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
 		} else {
-			html += "<p>Offline</p>";
+			html += '<p class="card-text"><small class="text-muted">Offline</small></p>';
 			html += "<p>Playtime: "+(Math.floor(((Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
 		}
-		html += "</div>";
+		html += "</div></div>";
+        if(cardCount === 2) {
+            html += '</div>';
+            html += '<div class="card-deck">';
+            cardCount = 0;
+        }
+        else {
+        	cardCount++;
+		}
 	}
-	console.log(html)
+    html += "</div>";
+	console.log(html);
 	return html;
 }
