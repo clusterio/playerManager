@@ -247,30 +247,34 @@ remote.add_interface("playerManager", {
 			player.tag = tag
 			
 			-- Clear old inventories
-			player.get_inventory(defines.inventory.player_quickbar).clear()
-			player.get_inventory(defines.inventory.player_guns).clear()
-			player.get_inventory(defines.inventory.player_ammo).clear()
-			player.get_inventory(defines.inventory.player_tools).clear()
-			player.get_inventory(defines.inventory.player_trash).clear()
-			player.get_inventory(defines.inventory.player_main).clear()
+			--player_quickbar no longer an inventory
+			--player.get_inventory(defines.inventory.player_quickbar).clear()
+			player.get_inventory(defines.inventory.character_guns).clear()
+			player.get_inventory(defines.inventory.character_ammo).clear()
+			-- pickaxe no longer exists
+			--player.get_inventory(defines.inventory.player_tools).clear()
+			player.get_inventory(defines.inventory.character_trash).clear()
+			player.get_inventory(defines.inventory.character_main).clear()
 			-- clear armor last to avoid inventory spilling
-			player.get_inventory(defines.inventory.player_armor).clear()
+			player.get_inventory(defines.inventory.character_armor).clear()
 			
 			-- 2: wooden chest, iron chest. (quickbar)
-			deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
+			--player_quickbar no longer an inventory
+			--deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
 			-- 3: pistol.
-			deserialize_inventory(player.get_inventory(defines.inventory.player_guns), invTable[3])
+			deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3])
 			-- 4: Ammo.
-			deserialize_inventory(player.get_inventory(defines.inventory.player_ammo), invTable[4])
+			deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4])
 			-- 5: armor.
-			deserialize_inventory(player.get_inventory(defines.inventory.player_armor), invTable[5])
+			deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5])
 			-- 6: pickaxe.
-			deserialize_inventory(player.get_inventory(defines.inventory.player_tools), invTable[6])
+			-- pickaxe no longer exists
+			--deserialize_inventory(player.get_inventory(defines.inventory.player_tools), invTable[6])
 			-- 7: nil.
 			-- 8: express-transport-belt (trash slots)
-			deserialize_inventory(player.get_inventory(defines.inventory.player_trash), invTable[8])
+			deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8])
 			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
-			deserialize_inventory(player.get_inventory(defines.inventory.player_main), invTable[1])
+			deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1])
 			
 			player.print("Inventory synchronized.")
 		else
