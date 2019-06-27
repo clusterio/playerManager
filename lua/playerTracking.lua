@@ -236,6 +236,7 @@ remote.add_interface("playerManager", {
 	importInventory = function(playerName, invData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
 		if player then
+			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
 			
 			-- sync misc details
