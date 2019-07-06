@@ -50,7 +50,13 @@ local function deserialize_inventory(inventory, data)
         end
     end
     for idx, str in pairs(item_exports) do
-        inventory[idx].import_stack(str)
+        local success = inventory[idx].import_stack(str)
+        if success == -1 then
+            print("item imported with errors")
+        elseif success == 1 then
+            print("failed to import item")
+        end
+
     end
     if data.filters then
         for idx, filter in pairs(data.filters) do
@@ -124,7 +130,7 @@ local function serialize_inventory(inventory)
 		if slot.valid_for_read then
 			if slot.is_item_with_inventory then
 				print("sending items with inventory is not allowed")
-			elseif slot.is_blueprint or slot.is_blueprint_book
+			elseif slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
 					or slot.is_deconstruction_item or slot.is_item_with_tags then
 				local success, export = pcall(slot.export_stack)
 				if not success then
