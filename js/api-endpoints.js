@@ -149,9 +149,13 @@ module.exports = masterPlugin =>{
 		&& typeof req.body.fieldName === "string"
 		&& req.body.fieldValue){
 			let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
-
+console.log(permissions)
 			try{// this statement fails whenever we request a modification to a user we don't have any explicit permissions to
-				var writePermissions = util.arrayRemoveDuplicates(permissions.all.write.concat(permissions.user[req.body.name].write))
+				var writePermissions = util.arrayRemoveDuplicates(
+					permissions.all.write.concat(
+						permissions.user[req.body.name] ? permissions.user[req.body.name].write : []
+					)
+				)
 			} catch(e){console.log(e)}
 			if(writePermissions.includes(req.body.fieldName)){
 				let userIndex = util.findInArray("name", req.body.name, masterPlugin.users);
