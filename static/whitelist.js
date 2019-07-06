@@ -11,7 +11,7 @@
 	let submitBan = document.querySelector("#submitBan");
 	
 	submitWhitelist.onclick = async () => {
-		let names = getUsernames("#userActionField > textarea");
+		let names = getUsernames(document.getElementById('usernameListTextArea').value);
 		let action = document.querySelector("#removeSlider").checked ? "add" : "remove" ;
 		let token = JSON.parse(localStorage.session).token;
 		
@@ -36,7 +36,7 @@
 		whitelistDisplayContainer.innerHTML = await renderStringArray(await getWhitelist());
 	}
 	submitBan.onclick = async () => {
-		let names = getUsernames("#userActionField > textarea");
+		let names = getUsernames(document.getElementById('usernameListTextArea').value);
 		let reason = document.querySelector("#banReason").value;
 		let action = document.querySelector("#removeSlider").checked ?  "add" : "remove";
 		let token = JSON.parse(localStorage.session).token;
@@ -60,11 +60,10 @@
 	}
 })();
 
-function getUsernames(selector){
+function getUsernames(usernameString){
 	let names = [];
 	// split names by , then \n then trim away whitespace, strip names with spaces in em, add to array
-	document.querySelector(selector).value.split(",").forEach(name => name.trim().split("\n").forEach(name => ((name = name.trim()) && !name.includes(" ")) ? names.push(name) : ""));
-	// console.log(names);
+	usernameString.split(",").forEach(name => name.trim().split("\n").forEach(name => ((name = name.trim()) && !name.includes(" ")) ? names.push(name) : ""));
 	return names;
 }
 async function getBanlist(){
