@@ -236,7 +236,7 @@ module.exports = masterPlugin =>{
 			if(req.body.action == "add" && permissions.cluster.includes("whitelist")){
 				if(!masterPlugin.whitelist.includes(req.body.factorioName)){
 					masterPlugin.whitelist.push(req.body.factorioName);
-					masterPlugin.broadcastCommand(`/whitelist add ${req.body.factorioName}`);
+					masterPlugin.broadcastCommand(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${req.body.factorioName}", "Standard")`);
 					res.send({
 						ok:true,
 						msg:`Added player ${req.body.factorioName} to whitelist`,
@@ -245,7 +245,8 @@ module.exports = masterPlugin =>{
 				
 			} else if(req.body.action == "remove" && permissions.cluster.includes("removeWhitelist")){
 				masterPlugin.whitelist.splice(masterPlugin.whitelist.indexOf(req.body.factorioName), 1);
-				masterPlugin.broadcastCommand(`/whitelist remove ${req.body.factorioName}`);
+				// Adding the player back into the default 
+				masterPlugin.broadcastCommand(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${req.body.factorioName}", "Default")`);
 				res.send({
 					ok:true,
 					msg:`Player ${req.body.factorioName} removed from whitelist`,
