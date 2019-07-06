@@ -30,12 +30,22 @@ module.exports = masterPlugin =>{
 		&& req.body.name
 		&& req.body.password
 		&& req.body.passwordConfirmation){
+			for(let i in masterPlugin.users){
+				let compareUser = masterPlugin.users[i]
+				if(compareUser.name.toLowerCase() == req.body.name.toLowerCase()){
+					res.send({
+						ok:false,
+						msg:"Name already taken"
+					})
+					return false
+				}
+			}
 			if(req.body.password !== req.body.passwordConfirmation){
 				res.send({
 					ok:false,
 					msg:"Passwords do not match",
 				});
-			} else {
+			} else {				
 				let startTime = Date.now();
 				let hash = await bcrypt.hash(req.body.password, 12);
 				console.log("Hashed password for new user '"+req.body.name+"' in "+(Date.now()-startTime)+"ms");
