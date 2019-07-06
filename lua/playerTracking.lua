@@ -1,12 +1,21 @@
 local function deserialize_grid(grid, data)
-    grid.clear()
-    local names, xs, ys = data.names, data.xs, data.ys
-    for i = 1, #names do
-        grid.put({
-            name = names[i],
-            position = {xs[i], ys[i]}
-        })
-    end
+	grid.clear()
+	local names, energy, shield, xs, ys = data.names, data.energy, data.shield, data.xs, data.ys
+	for i = 1, #names do
+		local equipment = grid.put({
+			name = names[i],
+			position = {xs[i], ys[i]}
+		})
+
+		if equipment then
+			if shield[i] > 0 then
+				equipment.shield = shield[i]
+			end
+			if energy[i] > 0 then
+				equipment.energy = energy[i]
+			end
+		end
+	end
 end
 
 local function deserialize_inventory(inventory, data)
@@ -236,6 +245,7 @@ remote.add_interface("playerManager", {
 	importInventory = function(playerName, invData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
 		if player then
+			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
 			
 			-- sync misc details
