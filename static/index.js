@@ -5,6 +5,9 @@ import {getUserFromPlayer, getPlayerList, getUserData, getSession, getToken, arr
 	let playerlistDisplayContainer = document.querySelector("#playerlistDisplayContainer");
 	playerlistDisplayContainer.innerHTML = await renderPlayerlist(await getPlayerList());
 
+	document.querySelector("#search").addEventListener('input', async function() {
+		playerlistDisplayContainer.innerHTML = await renderPlayerlist(await getPlayerList());
+	});
 })();
 
 async function renderPlayerlist(playerList){
@@ -19,6 +22,16 @@ async function renderPlayerlist(playerList){
 		});
 	}
 	playerList = playerList.sort((a, b) => b.onlineTimeTotal - a.onlineTimeTotal)
+	
+	// allow searching for multiple criteria separated by space
+	let searchArgs = document.querySelector("#search").value;
+	searchArgs = searchArgs.trim();
+	searchArgs = '(' + searchArgs.replace(/ +/g,")|(") + ')';
+	const search = new RegExp(searchArgs, 'i');
+	playerList = playerList.filter(function(player) {
+		return search.test(player.name);
+	})
+
 	for(let player in playerList){
 		player = playerList[player];
 		html += '<div class="card">' +
@@ -27,9 +40,9 @@ async function renderPlayerlist(playerList){
 		let username = await getUserFromPlayer(player.name);
 		console.log(username);
 		if(username){
-			html += `<h5 class="card-title"><a href="/playerManager/profile?username=${username}">${player.name}</a></h5>`
+			html += `<h5 class="card-title" style="color:rgb(${Number(player.r)*220+35},${Number(player.g)*220+35},${Number(player.b)*220+35})"><a href="/playerManager/profile?username=${username}">${player.name}</a></h5>`
 		} else {
-			html += '<h5 class="card-title">'+player.name+'</h5>';
+			html += `<h5 class="card-title" style="color:rgb(${Number(player.r)*220+35},${Number(player.g)*220+35},${Number(player.b)*220+35})">`+player.name+'</h5>';
 		}
 		if(player.connected === "true"){
 			html += ' <p class="card-text"><small class="text-muted">Online on '+await getInstanceName(player.instanceID)+"</small></p>";
@@ -39,7 +52,7 @@ async function renderPlayerlist(playerList){
 			html += "<p>Playtime: "+(Math.floor(((Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
 		}
 		html += "</div></div>";
-        if(cardCount === 2) {
+        if(cardCount === 3) {
             html += '</div>';
             html += '<div class="card-deck">';
             cardCount = 0;
