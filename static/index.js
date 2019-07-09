@@ -10,6 +10,15 @@ import {getUserFromPlayer, getPlayerList, getUserData, getSession, getToken, arr
 async function renderPlayerlist(playerList){
 	let html = '<div class="card-deck">';
 	let cardCount = 1;
+	for(let i in playerList){
+		let player = playerList[i]
+		Object.keys(player).forEach(key => {
+			if(key.includes("onlineTime") && !isNaN(Number(player[key]))){
+				player.onlineTimeTotal += Number(player[key]);
+			}
+		});
+	}
+	playerList = playerList.sort((a, b) => b.onlineTimeTotal - a.onlineTimeTotal)
 	for(let player in playerList){
 		player = playerList[player];
 		html += '<div class="card">' +
@@ -22,11 +31,6 @@ async function renderPlayerlist(playerList){
 		} else {
 			html += '<h5 class="card-title">'+player.name+'</h5>';
 		}
-		Object.keys(player).forEach(key => {
-			if(key.includes("onlineTime") && !isNaN(Number(player[key]))){
-				player.onlineTimeTotal += Number(player[key]);
-			}
-		});
 		if(player.connected === "true"){
 			html += ' <p class="card-text"><small class="text-muted">Online on '+await getInstanceName(player.instanceID)+"</small></p>";
 			html += "<p>Playtime: "+(Math.floor((Number(player.onlineTime)+(Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
