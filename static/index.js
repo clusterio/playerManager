@@ -38,17 +38,17 @@ async function renderPlayerlist(playerList){
 			'		<div class="card-body">';
 		// check if this player has a profile
 		let username = await getUserFromPlayer(player.name);
-		console.log(username);
 		if(username){
 			html += `<h5 class="card-title" style="color:rgb(${Number(player.r)*220+35},${Number(player.g)*220+35},${Number(player.b)*220+35})"><a href="/playerManager/profile?username=${username}">${player.name}</a></h5>`
 		} else {
 			html += `<h5 class="card-title" style="color:rgb(${Number(player.r)*220+35},${Number(player.g)*220+35},${Number(player.b)*220+35})">`+player.name+'</h5>';
 		}
 		if(player.connected === "true"){
-			html += ' <p class="card-text"><small class="text-muted">Online on '+await getInstanceName(player.instanceID)+"</small></p>";
+			html += ' <p class="card-text"><small class="text-muted">Online on '+await getInstanceName(player.instanceID)+`</small>${player.admin === "true"? '<small class="text-muted"> - Admin</small>' : ''}</p>`;
+			if(player.admin === "true") html += `<p class="card-text"><small class="text-muted">Admin</small></p>`
 			html += "<p>Playtime: "+(Math.floor((Number(player.onlineTime)+(Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
 		} else {
-			html += '<p class="card-text"><small class="text-muted">Offline</small></p>';
+			html += `<p class="card-text"><small class="text-muted">Offline</small>${player.admin === "true"? '<small class="text-muted"> - Admin</small>' : ''}</p>`;
 			html += "<p>Playtime: "+(Math.floor(((Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
 		}
 		html += "</div></div>";
