@@ -10,6 +10,14 @@ module.exports = masterPlugin =>{
 	masterPlugin.app.get("/api/playerManager/playerList", (req,res) => {
 		res.send(masterPlugin.managedPlayers);
 	});
+	masterPlugin.app.get("/api/playerManager/users", (req, res) => {
+		let userList = masterPlugin.users.map(user => ({
+			name: user.name,
+			description: user.description,
+			admin: user.admin || false
+		}))
+		res.send(userList)
+	})
 	masterPlugin.app.get("/api/playerManager/usernamesByPlayer", (req,res) => {
 		let usernamesByPlayer = {};
 		for(let i in masterPlugin.users){
