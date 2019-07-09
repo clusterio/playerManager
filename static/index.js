@@ -45,7 +45,6 @@ async function renderPlayerlist(playerList){
 		}
 		if(player.connected === "true"){
 			html += ' <p class="card-text"><small class="text-muted">Online on '+await getInstanceName(player.instanceID)+`</small>${player.admin === "true"? '<small class="text-muted"> - Admin</small>' : ''}</p>`;
-			if(player.admin === "true") html += `<p class="card-text"><small class="text-muted">Admin</small></p>`
 			html += "<p>Playtime: "+(Math.floor((Number(player.onlineTime)+(Number(player.onlineTimeTotal)||0))/60/60/60*10)/10)+" hours</p>";
 		} else {
 			html += `<p class="card-text"><small class="text-muted">Offline</small>${player.admin === "true"? '<small class="text-muted"> - Admin</small>' : ''}</p>`;
