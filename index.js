@@ -53,7 +53,7 @@ module.exports = class remoteCommands {
 							if(player.name == playerName){
 								if(player.inventory){
 									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
-									if(player.admin) {
+									if(player.admin === "true") {
 										playerIsAdmin = true;
 									}
 								}

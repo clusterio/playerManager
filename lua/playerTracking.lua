@@ -315,13 +315,12 @@ remote.add_interface("playerManager", {
 		-- if player is admin, dont change group. This is to stop the whitelist
 		-- from overwriting the admin list.
 		local player = game.permissions.get_group("Admin").players[playerName]
-		if not player then
-			log('Adding '..playerName..' to group '..permissionGroupName)
-			game.permissions.get_group(permissionGroupName).add_player(playerName)
-			if permissionGroupName == "Admin" then
-				game.players[playerName].admin = true
-			end
-		end
+		if player then return end
+		log('Adding '..playerName..' to group '..permissionGroupName)
+		game.permissions.get_group(permissionGroupName).add_player(playerName)
+		if permissionGroupName == "Admin" then
+			game.players[playerName].admin = true
+		end			
 	end,
 	-- Creates permission group definitions.
 	createPermissionGroups = function()
