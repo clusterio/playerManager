@@ -247,8 +247,8 @@ class masterPlugin {
 			}
 		}
 		if(playersOnThisInstance > 0){
-			return 1000;
-		} else return 10000;
+			return 10;
+		} else return 1000;
 	}
 	parseData(data, sharedData){
 		let parsedData = [];

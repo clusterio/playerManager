@@ -180,6 +180,30 @@ local function serialize_inventory(inventory)
 	}
 end
 
+
+local function serialize_quickbar(player)
+	local quickbar_names = {}
+	for i=1, 100 do
+		local slot = player.get_quick_bar_slot(i)
+		if slot ~= nil then
+			table.insert(quickbar_names, slot.name)
+		else
+			table.insert(quickbar_names, "")
+		end
+	end
+	return quickbar_names
+end
+
+local function deserialize_quickbar(player, quickbar)
+	for index, name in ipairs(quickbar) do
+		if name ~= "" then
+			player.set_quick_bar_slot(index, name)
+		else
+			player.set_quick_bar_slot(index, nil)
+		end
+	end
+end
+
 local function serialize_player(player)
 	local seed = game.surfaces[1].map_gen_settings.seed
 	local playerData = ""
@@ -203,7 +227,9 @@ local function serialize_player(player)
 		end
 	end
 	playerData = playerData .. "~inventory:"..serpent.line(inventories)
-	
+
+	local quickbar = serialize_quickbar(player)
+	playerData = playerData .. "~quickbar:"..serpent.line(quickbar)
 	return playerData
 end
 
@@ -252,12 +278,13 @@ remote.add_interface("playerManager", {
 			game.print("Downloading account for "..playerName.."...")
 		end
 	end,
-	importInventory = function(playerName, invData, forceName, spectator, admin, color, chat_color, tag)
+	importInventory = function(playerName, invData, quickbarData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
 		if player then
 			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
-			
+			local ok, quickbarTable = serpent.load(quickbarData)
+
 			-- sync misc details
 			player.force = forceName
 			player.spectator = spectator
@@ -267,34 +294,25 @@ remote.add_interface("playerManager", {
 			player.tag = tag
 			
 			-- Clear old inventories
-			--player_quickbar no longer an inventory
-			--player.get_inventory(defines.inventory.player_quickbar).clear()
 			player.get_inventory(defines.inventory.character_guns).clear()
 			player.get_inventory(defines.inventory.character_ammo).clear()
-			-- pickaxe no longer exists
-			--player.get_inventory(defines.inventory.player_tools).clear()
 			player.get_inventory(defines.inventory.character_trash).clear()
 			player.get_inventory(defines.inventory.character_main).clear()
 			-- clear armor last to avoid inventory spilling
 			player.get_inventory(defines.inventory.character_armor).clear()
 			
-			-- 2: wooden chest, iron chest. (quickbar)
-			--player_quickbar no longer an inventory
-			--deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
 			-- 3: pistol.
 			deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3])
 			-- 4: Ammo.
 			deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4])
 			-- 5: armor.
 			deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5])
-			-- 6: pickaxe.
-			-- pickaxe no longer exists
-			--deserialize_inventory(player.get_inventory(defines.inventory.player_tools), invTable[6])
-			-- 7: nil.
 			-- 8: express-transport-belt (trash slots)
 			deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8])
 			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
 			deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1])
+
+			deserialize_quickbar(player, quickbarTable)
 			
 			player.print("Inventory synchronized.")
 		else
