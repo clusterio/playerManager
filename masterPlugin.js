@@ -39,6 +39,7 @@ class masterPlugin {
 		
 		// initialize web API
 		require("./js/api-endpoints.js")(this);
+		require("./js/api-endpoints-player.js")(this);
 		
 		// initialize token auth module
 		this.authenticate = require("./../../lib/authenticate.js")(config);
@@ -204,6 +205,9 @@ class masterPlugin {
 			permissions.cluster.push("removeWhitelist");
 			permissions.cluster.push("banlist");
 			permissions.cluster.push("removeBanlist");
+			permissions.cluster.push("addPlayer");
+			permissions.cluster.push("editPlayer");
+			permissions.cluster.push("deletePlayer");
 			return permissions;
 		}
 		// run permissions middleware from other plugins

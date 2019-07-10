@@ -33,12 +33,14 @@ module.exports = class remoteCommands {
 			let hotpatchInstallStatus = await this.checkHotpatchInstallation();
 			this.hotpatchStatus = hotpatchInstallStatus;
 			this.messageInterface("Hotpach installation status: "+hotpatchInstallStatus);
+
 			if(hotpatchInstallStatus){
 				let mainCode = await this.getSafeLua("sharedPlugins/playerManager/lua/playerTracking.lua");
 				if(mainCode) var returnValue = await messageInterface(`/silent-command remote.call('hotpatch', 'update', '${pluginConfig.name}', '${pluginConfig.version}', '${mainCode}')`);
 				if(returnValue) console.log(returnValue);
 				this.messageInterface(`/silent-command remote.call("playerManager", "resetInvImportQueue")`);
-				
+				this.messageInterface(`/silent-command remote.call("playerManager", "createPermissionGroups")`);
+
 				let syncInventory = async ()=>{
 					let playerName = await messageInterface(`/silent-command remote.call("playerManager", "getImportTask")`);
 					playerName = playerName.trim();
@@ -46,13 +48,31 @@ module.exports = class remoteCommands {
 						messageInterface(`Downloading ${playerName}'s inventory`);
 						// set inventory
 						let playerData = (await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/playerList`)).body;
+						let playerIsAdmin = false;
 						playerData.forEach(player => {
 							if(player.name == playerName){
 								if(player.inventory){
 									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
+									if(player.admin === "true") {
+										playerIsAdmin = true;
+									}
 								}
 							}
 						});
+
+						// had to move whitelist code to here (player on join) as whitelist code can't run on players that haven't joined
+						// also deals with admin permissioning
+						if(playerIsAdmin) {
+							messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Admin")`);
+						} else {
+							
+							let whitelist = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/whitelistedPlayers`);
+							whitelist.body.forEach(whitelistedPlayerName => {
+								if(whitelistedPlayerName == playerName){
+									messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
+								}
+							});
+						}
 					}
 				}
 				setInterval(syncInventory, 2000);
@@ -77,7 +97,7 @@ module.exports = class remoteCommands {
 				messageInterface(`/ban ${ban.factorioName} ${ban.reason}`);
 			});
 			whitelist.body.forEach(name => {
-				let cmd = `/whitelist add ${name}`
+				let cmd = `/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${name}", "Standard")`
 				messageInterface(cmd);
 				console.log(cmd);
 			});
