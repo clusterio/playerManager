@@ -289,8 +289,10 @@ local function defaultSyncConditionCheck()
 		return
 	end
 
-	if rockets_launched() == 0 then return end
-	if enemies_left() > 0 then return end
+	-- if rockets_launched() == 0 then return end
+	-- if enemies_left() > 0 then return end
+
+	if rockets_launched() == 0 and enemies_left() > 0 then return end
 
 	for _, player in pairs(game.players) do
 		backupPlayerStuff(player)
