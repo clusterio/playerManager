@@ -1,3 +1,38 @@
+local function backupPlayerStuff(player)
+	local inventories = {
+		player.get_inventory(defines.inventory.character_guns),
+		player.get_inventory(defines.inventory.character_ammo),
+		player.get_inventory(defines.inventory.character_trash),
+		player.get_inventory(defines.inventory.character_main),
+		player.get_inventory(defines.inventory.character_armor),
+	}
+
+	local inventory_size = 0
+	for i, inventory in ipairs(inventories) do
+		for i=1, #inventory do
+			if inventory[i].valid and inventory[i].valid_for_read and inventory[i].count > 0 then
+				inventory_size = inventory_size + 1
+			end
+		end
+	end
+
+	local corpse = player.surface.create_entity{
+		name = "character-corpse",
+		position = player.character.position,
+		force = player.force,
+		inventory_size = inventory_size,
+		player_index = player.index,
+	}
+
+	local corpse_inv = corpse.get_inventory(defines.inventory.character_corpse)
+	for i, inventory in ipairs(inventories) do
+		for i=1, #inventory do
+			corpse_inv.insert(inventory[i])
+		end
+		inventory.clear()
+	end
+end
+
 local function deserialize_grid(grid, data)
 	grid.clear()
 	local names, energy, shield, xs, ys = data.names, data.energy, data.shield, data.xs, data.ys
@@ -233,18 +268,46 @@ local function serialize_player(player)
 	return playerData
 end
 
--- Register and handle events
-script.on_event(defines.events.on_tick, function()
-	if game.tick % 600 then
-		-- Do stuff once a second
-		
+
+-- event helpers
+local function rockets_launched()
+	return game.forces["player"].rockets_launched
+end
+local function enemies_left()
+	local force = game.forces["enemy"]
+	local protoypes = {"behemoth-biter", "behemoth-spitter", "big-biter", "big-spitter", "medium-biter", "medium-spitter", "small-biter", "small-spitter", "biter-spawner", "spitter-spawner", "behemoth-worm-turret", "big-worm-turret", "medium-worm-turret", "small-worm-turret"}
+	local enemies_left = 0
+	for _, prototype in pairs(protoypes) do
+		enemies_left = enemies_left + force.get_entity_count(prototype)
 	end
-end)
+
+	return enemies_left
+end
+
+local function defaultSyncConditionCheck()
+	if global.inventorySyncEnabled then
+		return
+	end
+
+	if rockets_launched() == 0 then return end
+	if enemies_left() > 0 then return end
+
+	for _, player in pairs(game.players) do
+		backupPlayerStuff(player)
+		table.insert(global.playersToImport, player.name)
+		player.print("Preparing profile sync...")
+	end
+
+	global.inventorySyncEnabled = true
+end
+script.on_nth_tick(60, defaultSyncConditionCheck)
 
 script.on_init(function()
 	global.playersToImport = {}
 	global.playersToExport = ""
 	global.inventory_types = {}
+	global.inventorySynced = {} -- array of player_index=>bool
+	global.inventorySyncEnabled = true
 	do
 		local map = {}
 		for _, inventory_type in pairs(defines.inventory) do
@@ -258,19 +321,37 @@ script.on_init(function()
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
+	if not global.inventorySyncEnabled then
+		return
+	end
+
 	local player = game.players[event.player_index]
 	table.insert(global.playersToImport, player.name)
 	player.print("Registered you joining the game, preparing profile sync...")
 end)
 
 script.on_event(defines.events.on_player_left_game, function(event)
+	if not (global.inventorySynced and global.inventorySyncEnabled[event.player_index]) then
+		return
+	end
 	local player = game.players[event.player_index]
 	global.playersToExport = global.playersToExport .. serialize_player(player)
 	game.print("Registered "..player.name.." leaving the game, preparing for upload...")
+
+	global.inventorySynced[event.player_index] = false
 end)
 
 remote.remove_interface("playerManager")
 remote.add_interface("playerManager", {
+	enableInventorySync = function()
+		global.inventorySyncEnabled = true
+	end,
+	disableInventorySync = function()
+		global.inventorySyncEnabled = false
+	end,
+	runCode = function(code)
+		load(code, "playerTracking code injection failed!", "t", _ENV)()
+	end,
 	getImportTask = function()
 		if #global.playersToImport >= 1 then
 			local playerName = table.remove(global.playersToImport, 1)
@@ -281,9 +362,16 @@ remote.add_interface("playerManager", {
 	importInventory = function(playerName, invData, quickbarData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
 		if player then
+
 			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
 			local ok, quickbarTable = serpent.load(quickbarData)
+
+			global.inventorySynced= global.inventorySynced or {}
+
+			if global.inventorySynced[player.index] == nil then
+				backupPlayerStuff(player)
+			end
 
 			-- sync misc details
 			player.force = forceName
@@ -315,6 +403,7 @@ remote.add_interface("playerManager", {
 			deserialize_quickbar(player, quickbarTable)
 			
 			player.print("Inventory synchronized.")
+			global.inventorySynced[player.index] = true
 		else
 			game.print("Player "..playerName.." left before they could get their inventory!")
 		end
@@ -897,4 +986,5 @@ remote.add_interface("playerManager", {
 		game.permissions.get_group('Standard').set_allows_action(defines.input_action.wire_dragging,true)
 		game.permissions.get_group('Standard').set_allows_action(defines.input_action.write_to_console,true)
 	end
+
 })
