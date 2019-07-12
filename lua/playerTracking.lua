@@ -560,6 +560,11 @@ local function backupPlayerStuff(player)
 --		return
 --	end
 
+	if player.online_time < 60 * 60 * 10 then
+		-- don't generate a corpse-chest if the player was fresh on the server
+		return
+	end
+
 	local inventories = {
 		player.get_inventory(defines.inventory.character_guns),
 		player.get_inventory(defines.inventory.character_ammo),
