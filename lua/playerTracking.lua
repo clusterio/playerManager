@@ -737,7 +737,7 @@ local function serialize_inventory(inventory)
 		local slot = inventory[i]
 		if slot.valid_for_read then
 			if slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
-					or slot.is_deconstruction_item or slot.is_item_with_tags then
+					or slot.is_deconstruction_item or slot.is_item_with_tags or slot.is_selection_tool then
 				local success, export = pcall(slot.export_stack)
 				if not success then
 					print("failed to export item")
