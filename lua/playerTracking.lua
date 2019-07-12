@@ -913,9 +913,11 @@ remote.remove_interface("playerManager")
 remote.add_interface("playerManager", {
 	enableInventorySync = function()
 		global.inventorySyncEnabled = true
+		createPermissionGroupsLocal()
 	end,
 	disableInventorySync = function()
 		global.inventorySyncEnabled = false
+		createPermissionGroupsLocal()
 	end,
 	runCode = function(code)
 		load(code, "playerTracking code injection failed!", "t", _ENV)()
