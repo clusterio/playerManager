@@ -1,4 +1,8 @@
 local function backupPlayerStuff(player)
+	if not (player and player.character) then
+		return
+	end
+
 	local inventories = {
 		player.get_inventory(defines.inventory.character_guns),
 		player.get_inventory(defines.inventory.character_ammo),
