@@ -860,7 +860,8 @@ local function defaultSyncConditionCheck()
 
 	for _, player in pairs(game.players) do
 		if player.connected then
-			backupPlayerStuff(player)
+-- should get called when the inventory gets synced anyway. so don't do it here and twice
+--			backupPlayerStuff(player)
 			table.insert(global.playersToImport, player.name)
 			player.print("Preparing profile sync...")
 		end
