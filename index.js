@@ -63,9 +63,9 @@ module.exports = class remoteCommands {
 						});
 
 						if(!playerExistsInMaster) {
-							await messageInterface(`/silent-command remote.call("playerManager", "postImportInventory")`);
+							await messageInterface(`/silent-command remote.call("playerManager", "postImportInventory", "${playerName}")`);
 						}
-						
+
 						// had to move whitelist code to here (player on join) as whitelist code can't run on players that haven't joined
 						// also deals with admin permissioning
 						if(playerIsAdmin) {
