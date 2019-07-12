@@ -1,7 +1,7 @@
 local function backupPlayerStuff(player)
-	if not (player and player.character) then
-		return
-	end
+--	if not (player and player.character) then
+--		return
+--	end
 
 	local inventories = {
 		player.get_inventory(defines.inventory.character_guns),
@@ -21,7 +21,7 @@ local function backupPlayerStuff(player)
 	end
 
 	local position = {0,0}
-	if player.character then postion = player.character.position end
+	if player.character then position = player.character.position end
 
 	local corpse = player.surface.create_entity{
 		name = "character-corpse",
