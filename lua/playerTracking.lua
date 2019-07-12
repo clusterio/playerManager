@@ -340,7 +340,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 end)
 
 script.on_event(defines.events.on_player_left_game, function(event)
-	if not (global.inventorySynced and global.inventorySyncEnabled[event.player_index]) then
+	if not (global.inventorySynced and global.inventorySynced[event.player_index]) then
 		return
 	end
 	local player = game.players[event.player_index]
