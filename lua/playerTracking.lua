@@ -902,6 +902,15 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	end
 
 	local player = game.players[event.player_index]
+
+	-- clear the inv if it was synced before to prevent duping
+	if global.inventorySynced and global.inventorySynced[event.player_index] then
+		player.get_inventory(defines.inventory.character_guns).clear()
+		player.get_inventory(defines.inventory.character_ammo).clear()
+		player.get_inventory(defines.inventory.character_trash).clear()
+		player.get_inventory(defines.inventory.character_main).clear()
+		player.get_inventory(defines.inventory.character_armor).clear()
+	end
 	table.insert(global.playersToImport, player.name)
 	player.print("Registered you joining the game, preparing profile sync...")
 end)
