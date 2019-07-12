@@ -859,9 +859,11 @@ local function defaultSyncConditionCheck()
 	if rockets_launched() == 0 and enemies_left() > 0 then return end
 
 	for _, player in pairs(game.players) do
-		backupPlayerStuff(player)
-		table.insert(global.playersToImport, player.name)
-		player.print("Preparing profile sync...")
+		if player.connected then
+			backupPlayerStuff(player)
+			table.insert(global.playersToImport, player.name)
+			player.print("Preparing profile sync...")
+		end
 	end
 
 	createPermissionGroupsLocal()
