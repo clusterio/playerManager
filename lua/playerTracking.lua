@@ -1,3 +1,5 @@
+require("mod-gui")
+
 local function setRestrictedPermissions(permission_group)
 	permission_group.set_allows_action(defines.input_action.activate_copy,false)
 	permission_group.set_allows_action(defines.input_action.activate_cut,false)
@@ -900,11 +902,19 @@ script.on_init(function()
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
+	local player = game.players[event.player_index]
+	if not player then
+		return
+	end
+
+	if not player.admin then
+		mod_gui.get_button_flow(player)["hotpatch-button"].visible = false
+	end
+
 	if not global.inventorySyncEnabled then
 		return
 	end
 
-	local player = game.players[event.player_index]
 
 	-- clear the inv if it was synced before to prevent duping
 	if global.inventorySynced and global.inventorySynced[event.player_index] then
