@@ -906,7 +906,7 @@ script.on_event(defines.events.on_player_left_game, function(event)
 	end
 	local player = game.players[event.player_index]
 	global.playersToExport = global.playersToExport .. serialize_player(player)
-	game.print("Registered "..player.name.." leaving the game, preparing for upload...")
+	log("Registered "..player.name.." leaving the game, preparing for upload...")
 
 	global.inventorySynced[event.player_index] = false
 end)
@@ -979,6 +979,11 @@ remote.add_interface("playerManager", {
 		else
 			game.print("Player "..playerName.." left before they could get their inventory!")
 		end
+	end,
+	postImportInventory = function(playerName)
+		local player = game.players[playerName]
+		if not player then return end
+		global.inventorySynced[player.index] = true
 	end,
 	resetInvImportQueue = function()
 		global.playersToImport = {}
