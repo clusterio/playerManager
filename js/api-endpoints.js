@@ -7,9 +7,14 @@ const sanitizer = require('sanitizer');
 const util = require("./util.js");
 
 module.exports = masterPlugin =>{
-	masterPlugin.app.get("/api/playerManager/playerList", (req,res) => {
-		res.send(masterPlugin.managedPlayers);
-	});
+	masterPlugin.app.get("/api/playerManager/users", (req, res) => {
+		let userList = masterPlugin.users.map(user => ({
+			name: user.name,
+			description: user.description,
+			admin: user.admin || false
+		}))
+		res.send(userList)
+	})
 	masterPlugin.app.get("/api/playerManager/usernamesByPlayer", (req,res) => {
 		let usernamesByPlayer = {};
 		for(let i in masterPlugin.users){
@@ -30,12 +35,22 @@ module.exports = masterPlugin =>{
 		&& req.body.name
 		&& req.body.password
 		&& req.body.passwordConfirmation){
+			for(let i in masterPlugin.users){
+				let compareUser = masterPlugin.users[i]
+				if(compareUser.name.toLowerCase() == req.body.name.toLowerCase()){
+					res.send({
+						ok:false,
+						msg:"Name already taken"
+					})
+					return false
+				}
+			}
 			if(req.body.password !== req.body.passwordConfirmation){
 				res.send({
 					ok:false,
 					msg:"Passwords do not match",
 				});
-			} else {
+			} else {				
 				let startTime = Date.now();
 				let hash = await bcrypt.hash(req.body.password, 12);
 				console.log("Hashed password for new user '"+req.body.name+"' in "+(Date.now()-startTime)+"ms");
@@ -149,9 +164,13 @@ module.exports = masterPlugin =>{
 		&& typeof req.body.fieldName === "string"
 		&& req.body.fieldValue){
 			let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
-
+console.log(permissions)
 			try{// this statement fails whenever we request a modification to a user we don't have any explicit permissions to
-				var writePermissions = util.arrayRemoveDuplicates(permissions.all.write.concat(permissions.user[req.body.name].write))
+				var writePermissions = util.arrayRemoveDuplicates(
+					permissions.all.write.concat(
+						permissions.user[req.body.name] ? permissions.user[req.body.name].write : []
+					)
+				)
 			} catch(e){console.log(e)}
 			if(writePermissions.includes(req.body.fieldName)){
 				let userIndex = util.findInArray("name", req.body.name, masterPlugin.users);
@@ -215,105 +234,6 @@ module.exports = masterPlugin =>{
 			res.send({
 				ok:false,
 				msg:"Invalid parameters, please send {name, password, passwordConfirmation}",
-			});
-		}
-	});
-	// Manage whitelist/banlist
-	masterPlugin.app.get("/api/playerManager/whitelistedPlayers", async (req,res) => {
-		res.send(masterPlugin.whitelist);
-	});
-	masterPlugin.app.get("/api/playerManager/bannedPlayers", async (req,res) => {
-		res.send(masterPlugin.banlist);
-	});
-	masterPlugin.app.post("/api/playerManager/whitelist", async (req,res) => {
-		if(req.body
-		&& typeof req.body.factorioName == "string"
-		&& typeof req.body.action == "string"
-		&& (req.body.action == "add" || req.body.action == "remove")
-		&& typeof req.body.token == "string"){
-			let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
-
-			if(req.body.action == "add" && permissions.cluster.includes("whitelist")){
-				if(!masterPlugin.whitelist.includes(req.body.factorioName)){
-					masterPlugin.whitelist.push(req.body.factorioName);
-					masterPlugin.broadcastCommand(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${req.body.factorioName}", "Standard")`);
-					res.send({
-						ok:true,
-						msg:`Added player ${req.body.factorioName} to whitelist`,
-					});
-				}
-				
-			} else if(req.body.action == "remove" && permissions.cluster.includes("removeWhitelist")){
-				masterPlugin.whitelist.splice(masterPlugin.whitelist.indexOf(req.body.factorioName), 1);
-				// Adding the player back into the default 
-				masterPlugin.broadcastCommand(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${req.body.factorioName}", "Default")`);
-				res.send({
-					ok:true,
-					msg:`Player ${req.body.factorioName} removed from whitelist`,
-				});
-			} else {
-				res.send({
-					ok:false,
-					msg:"Insufficient permissions, make sure you have permissions.cluster.whitelist and/or permissions.cluster.removeWhitelist",
-				});
-			}
-		} else {
-			console.log("nok")
-			res.send({
-				ok:false,
-				msg:"Invalid parameters, please send {factorioName, action[add|remove], token}",
-			});
-		}
-	});
-	masterPlugin.app.post("/api/playerManager/banlist", async (req,res) => {
-		if(req.body
-		&& typeof req.body.factorioName == "string"
-		&& typeof req.body.action == "string"
-		&& ((req.body.action == "add" && typeof req.body.reason == "string") || req.body.action == "remove")
-		&& typeof req.body.token == "string"){
-			let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
-			if(req.body.action == "add" && permissions.cluster.includes("banlist")){
-				let indexes = util.findInArray("factorioName", req.body.factorioName, masterPlugin.banlist);
-				if(indexes.length == 1){
-					// update an existing ban
-					masterPlugin.banlist[indexes[0]].reason = req.body.reason;
-					masterPlugin.broadcastCommand(`/banlist remove ${req.body.factorioName}`);
-					var msg = `Updated ban for user ${req.body.factorioName} for ${req.body.reason}`;
-				} else {
-					// ban a new player
-					masterPlugin.banlist.push({
-						factorioName: req.body.factorioName,
-						reason: req.body.reason,
-					});
-					var msg = `Banned ${req.body.factorioName} for ${req.body.reason}`;
-				}
-				// Perform the ban
-				setTimeout(()=>{
-					masterPlugin.broadcastCommand(`/ban ${req.body.factorioName} ${req.body.reason}`);
-					res.send({
-						ok:true,
-						msg,
-					});
-				},1000);
-			} else if(req.body.action == "remove" && permissions.cluster.includes("removeBanlist")){
-				let indexes = util.findInArray("factorioName", req.body.factorioName, masterPlugin.banlist)
-				let pardonedPlayers = [];
-				indexes.forEach(i => {
-					let ban = masterPlugin.banlist[i];
-					masterPlugin.broadcastCommand(`/unban ${ban.factorioName}`);
-					pardonedPlayers.push(ban.factorioName);
-					masterPlugin.banlist.splice(i, 1)
-				});
-				res.send({
-					ok:true,
-					msg:`Pardoned player(s) ${pardonedPlayers.join(", ")}`,
-				});
-				console.log(`Pardoned player(s) ${pardonedPlayers.join(", ")}`);
-			}
-		} else {
-			res.send({
-				ok:false,
-				msg:"Invalid parameters, please send {factorioName, action[add|remove], token, [reason]}",
 			});
 		}
 	});

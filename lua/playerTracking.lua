@@ -1,3 +1,38 @@
+local function backupPlayerStuff(player)
+	local inventories = {
+		player.get_inventory(defines.inventory.character_guns),
+		player.get_inventory(defines.inventory.character_ammo),
+		player.get_inventory(defines.inventory.character_trash),
+		player.get_inventory(defines.inventory.character_main),
+		player.get_inventory(defines.inventory.character_armor),
+	}
+
+	local inventory_size = 0
+	for i, inventory in ipairs(inventories) do
+		for i=1, #inventory do
+			if inventory[i].valid and inventory[i].valid_for_read and inventory[i].count > 0 then
+				inventory_size = inventory_size + 1
+			end
+		end
+	end
+
+	local corpse = player.surface.create_entity{
+		name = "character-corpse",
+		position = player.character.position,
+		force = player.force,
+		inventory_size = inventory_size,
+		player_index = player.index,
+	}
+
+	local corpse_inv = corpse.get_inventory(defines.inventory.character_corpse)
+	for i, inventory in ipairs(inventories) do
+		for i=1, #inventory do
+			corpse_inv.insert(inventory[i])
+		end
+		inventory.clear()
+	end
+end
+
 local function deserialize_grid(grid, data)
 	grid.clear()
 	local names, energy, shield, xs, ys = data.names, data.energy, data.shield, data.xs, data.ys
@@ -50,7 +85,13 @@ local function deserialize_inventory(inventory, data)
         end
     end
     for idx, str in pairs(item_exports) do
-        inventory[idx].import_stack(str)
+        local success = inventory[idx].import_stack(str)
+        if success == -1 then
+            print("item imported with errors")
+        elseif success == 1 then
+            print("failed to import item")
+        end
+
     end
     if data.filters then
         for idx, filter in pairs(data.filters) do
@@ -73,7 +114,7 @@ do
     table.sort(inventory_types)
 end
 local function serialize_equipment_grid(grid)
-	local names, xs, ys = {}, {}, {}
+	local names, energy, shield, xs, ys = {}, {}, {}, {}, {}
 
 	local position = {0,0}
 	local width, height = grid.width, grid.height
@@ -94,6 +135,8 @@ local function serialize_equipment_grid(grid)
 
 					local idx = #names + 1
 					names[idx] = equipment.name
+					energy[idx] = equipment.energy
+					shield[idx] = equipment.shield
 					xs[idx] = x
 					ys[idx] = y
 				end
@@ -102,6 +145,8 @@ local function serialize_equipment_grid(grid)
 	end
 	return {
 		names = names,
+		energy = energy,
+		shield = shield,
 		xs = xs,
 		ys = ys,
 	}
@@ -122,9 +167,7 @@ local function serialize_inventory(inventory)
 	for i = 1, #inventory do
 		local slot = inventory[i]
 		if slot.valid_for_read then
-			if slot.is_item_with_inventory then
-				print("sending items with inventory is not allowed")
-			elseif slot.is_blueprint or slot.is_blueprint_book
+			if slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
 					or slot.is_deconstruction_item or slot.is_item_with_tags then
 				local success, export = pcall(slot.export_stack)
 				if not success then
@@ -132,6 +175,8 @@ local function serialize_inventory(inventory)
 				else
 					item_exports[i] = export
 				end
+			elseif slot.is_item_with_inventory then
+				print("sending items with inventory is not allowed")
 			else
 				item_names[i] = slot.name
 				item_counts[i] = slot.count
@@ -170,6 +215,30 @@ local function serialize_inventory(inventory)
 	}
 end
 
+
+local function serialize_quickbar(player)
+	local quickbar_names = {}
+	for i=1, 100 do
+		local slot = player.get_quick_bar_slot(i)
+		if slot ~= nil then
+			table.insert(quickbar_names, slot.name)
+		else
+			table.insert(quickbar_names, "")
+		end
+	end
+	return quickbar_names
+end
+
+local function deserialize_quickbar(player, quickbar)
+	for index, name in ipairs(quickbar) do
+		if name ~= "" then
+			player.set_quick_bar_slot(index, name)
+		else
+			player.set_quick_bar_slot(index, nil)
+		end
+	end
+end
+
 local function serialize_player(player)
 	local seed = game.surfaces[1].map_gen_settings.seed
 	local playerData = ""
@@ -193,22 +262,54 @@ local function serialize_player(player)
 		end
 	end
 	playerData = playerData .. "~inventory:"..serpent.line(inventories)
-	
+
+	local quickbar = serialize_quickbar(player)
+	playerData = playerData .. "~quickbar:"..serpent.line(quickbar)
 	return playerData
 end
 
--- Register and handle events
-script.on_event(defines.events.on_tick, function()
-	if game.tick % 600 then
-		-- Do stuff once a second
-		
+
+-- event helpers
+local function rockets_launched()
+	return game.forces["player"].rockets_launched
+end
+local function enemies_left()
+	local force = game.forces["enemy"]
+	local protoypes = {"behemoth-biter", "behemoth-spitter", "big-biter", "big-spitter", "medium-biter", "medium-spitter", "small-biter", "small-spitter", "biter-spawner", "spitter-spawner", "behemoth-worm-turret", "big-worm-turret", "medium-worm-turret", "small-worm-turret"}
+	local enemies_left = 0
+	for _, prototype in pairs(protoypes) do
+		enemies_left = enemies_left + force.get_entity_count(prototype)
 	end
-end)
+
+	return enemies_left
+end
+
+local function defaultSyncConditionCheck()
+	if global.inventorySyncEnabled then
+		return
+	end
+
+	-- if rockets_launched() == 0 then return end
+	-- if enemies_left() > 0 then return end
+
+	if rockets_launched() == 0 and enemies_left() > 0 then return end
+
+	for _, player in pairs(game.players) do
+		backupPlayerStuff(player)
+		table.insert(global.playersToImport, player.name)
+		player.print("Preparing profile sync...")
+	end
+
+	global.inventorySyncEnabled = true
+end
+script.on_nth_tick(60, defaultSyncConditionCheck)
 
 script.on_init(function()
 	global.playersToImport = {}
 	global.playersToExport = ""
 	global.inventory_types = {}
+	global.inventorySynced = {} -- array of player_index=>bool
+	global.inventorySyncEnabled = true
 	do
 		local map = {}
 		for _, inventory_type in pairs(defines.inventory) do
@@ -222,19 +323,37 @@ script.on_init(function()
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
+	if not global.inventorySyncEnabled then
+		return
+	end
+
 	local player = game.players[event.player_index]
 	table.insert(global.playersToImport, player.name)
 	player.print("Registered you joining the game, preparing profile sync...")
 end)
 
 script.on_event(defines.events.on_player_left_game, function(event)
+	if not (global.inventorySynced and global.inventorySyncEnabled[event.player_index]) then
+		return
+	end
 	local player = game.players[event.player_index]
 	global.playersToExport = global.playersToExport .. serialize_player(player)
 	game.print("Registered "..player.name.." leaving the game, preparing for upload...")
+
+	global.inventorySynced[event.player_index] = false
 end)
 
 remote.remove_interface("playerManager")
 remote.add_interface("playerManager", {
+	enableInventorySync = function()
+		global.inventorySyncEnabled = true
+	end,
+	disableInventorySync = function()
+		global.inventorySyncEnabled = false
+	end,
+	runCode = function(code)
+		load(code, "playerTracking code injection failed!", "t", _ENV)()
+	end,
 	getImportTask = function()
 		if #global.playersToImport >= 1 then
 			local playerName = table.remove(global.playersToImport, 1)
@@ -242,12 +361,20 @@ remote.add_interface("playerManager", {
 			game.print("Downloading account for "..playerName.."...")
 		end
 	end,
-	importInventory = function(playerName, invData, forceName, spectator, admin, color, chat_color, tag)
+	importInventory = function(playerName, invData, quickbarData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
 		if player then
+
 			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
-			
+			local ok, quickbarTable = serpent.load(quickbarData)
+
+			global.inventorySynced= global.inventorySynced or {}
+
+			if global.inventorySynced[player.index] == nil then
+				backupPlayerStuff(player)
+			end
+
 			-- sync misc details
 			player.force = forceName
 			player.spectator = spectator
@@ -257,36 +384,28 @@ remote.add_interface("playerManager", {
 			player.tag = tag
 			
 			-- Clear old inventories
-			--player_quickbar no longer an inventory
-			--player.get_inventory(defines.inventory.player_quickbar).clear()
 			player.get_inventory(defines.inventory.character_guns).clear()
 			player.get_inventory(defines.inventory.character_ammo).clear()
-			-- pickaxe no longer exists
-			--player.get_inventory(defines.inventory.player_tools).clear()
 			player.get_inventory(defines.inventory.character_trash).clear()
 			player.get_inventory(defines.inventory.character_main).clear()
 			-- clear armor last to avoid inventory spilling
 			player.get_inventory(defines.inventory.character_armor).clear()
 			
-			-- 2: wooden chest, iron chest. (quickbar)
-			--player_quickbar no longer an inventory
-			--deserialize_inventory(player.get_inventory(defines.inventory.player_quickbar), invTable[2])
 			-- 3: pistol.
 			deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3])
 			-- 4: Ammo.
 			deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4])
 			-- 5: armor.
 			deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5])
-			-- 6: pickaxe.
-			-- pickaxe no longer exists
-			--deserialize_inventory(player.get_inventory(defines.inventory.player_tools), invTable[6])
-			-- 7: nil.
 			-- 8: express-transport-belt (trash slots)
 			deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8])
 			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
 			deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1])
+
+			deserialize_quickbar(player, quickbarTable)
 			
 			player.print("Inventory synchronized.")
+			global.inventorySynced[player.index] = true
 		else
 			game.print("Player "..playerName.." left before they could get their inventory!")
 		end
@@ -869,4 +988,5 @@ remote.add_interface("playerManager", {
 		game.permissions.get_group('Standard').set_allows_action(defines.input_action.wire_dragging,true)
 		game.permissions.get_group('Standard').set_allows_action(defines.input_action.write_to_console,true)
 	end
+
 })

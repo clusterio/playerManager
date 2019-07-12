@@ -52,7 +52,7 @@ module.exports = class remoteCommands {
 						playerData.forEach(player => {
 							if(player.name == playerName){
 								if(player.inventory){
-									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
+									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.quickbar}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
 									if(player.admin === "true") {
 										playerIsAdmin = true;
 									}
@@ -65,7 +65,7 @@ module.exports = class remoteCommands {
 						if(playerIsAdmin) {
 							messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Admin")`);
 						} else {
-							
+
 							let whitelist = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/whitelistedPlayers`);
 							whitelist.body.forEach(whitelistedPlayerName => {
 								if(whitelistedPlayerName == playerName){
