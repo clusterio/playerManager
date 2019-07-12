@@ -1,3 +1,5 @@
+const util = require("./util.js");
+
 module.exports = masterPlugin => {
     masterPlugin.app.get("/api/playerManager/playerList", (req,res) => {
 		res.send(masterPlugin.managedPlayers);
