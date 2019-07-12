@@ -736,18 +736,16 @@ local function serialize_inventory(inventory)
 	for i = 1, #inventory do
 		local slot = inventory[i]
 		if slot.valid_for_read then
-			if slot.is_selection_tool then
-				-- ignore until we know how to handle it
-			elseif slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
-					or slot.is_deconstruction_item or slot.is_item_with_tags then
+			if slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
+					or slot.is_deconstruction_item or slot.is_item_with_tags or slot.is_selection_tool then
 				local success, export = pcall(slot.export_stack)
 				if not success then
-					print("failed to export item")
+					-- print("failed to export item")
 				else
 					item_exports[i] = export
 				end
 			elseif slot.is_item_with_inventory then
-				print("sending items with inventory is not allowed")
+				-- print("sending items with inventory is not allowed")
 			else
 				item_names[i] = slot.name
 				item_counts[i] = slot.count
