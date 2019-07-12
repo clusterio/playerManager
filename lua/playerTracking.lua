@@ -16,9 +16,12 @@ local function backupPlayerStuff(player)
 		end
 	end
 
+	local position = {0,0}
+	if player.character then postion = player.character.position end
+
 	local corpse = player.surface.create_entity{
 		name = "character-corpse",
-		position = player.character.position,
+		position = position,
 		force = player.force,
 		inventory_size = inventory_size,
 		player_index = player.index,
@@ -433,6 +436,9 @@ remote.add_interface("playerManager", {
 	end,
 	-- Creates permission group definitions.
 	createPermissionGroups = function()
+		if not global.inventorySyncEnabled then
+			return
+		end
 		log('Loading Permission Group Default...')
 		permission_group = game.permissions.get_group('Default')
 		permission_group.set_allows_action(defines.input_action.activate_copy,true)
