@@ -985,6 +985,7 @@ remote.add_interface("playerManager", {
 		local player = game.players[playerName]
 		if not player then return end
 		global.inventorySynced[player.index] = true
+		player.print("No inventory on master yet, will upload on leaving.")
 	end,
 	resetInvImportQueue = function()
 		global.playersToImport = {}
