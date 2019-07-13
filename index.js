@@ -44,7 +44,6 @@ module.exports = class remoteCommands {
 				this.syncingInventory = false;
 				this.syncingInventoryTries = 0;
 				let syncInventory = async ()=>{
-					let processingPlayer = false;
 					this.syncingInventoryTries++;
 					if(this.syncingInventory) {
 						if(this.syncingInventoryTries > 5) {
@@ -57,7 +56,6 @@ module.exports = class remoteCommands {
 						let playerName = await messageInterface(`/silent-command remote.call("playerManager", "getImportTask")`);
 						playerName = playerName.trim();
 						if(playerName){
-							processingPlayer = true;
 							// check is player is banned
 							let isPlayerBanned = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken});
 							if(isPlayerBanned.body.msg === true){
@@ -89,7 +87,7 @@ module.exports = class remoteCommands {
 							this.syncingInventory = false;
 							this.syncingInventoryTries = 0;
 						}
-					} while (processingPlayer);
+					} while (syncingInventory);
 				}
 				setInterval(syncInventory, 2000);
 			}
