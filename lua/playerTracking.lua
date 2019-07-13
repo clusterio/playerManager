@@ -1,3 +1,5 @@
+require("mod-gui")
+
 local function setRestrictedPermissions(permission_group)
 	permission_group.set_allows_action(defines.input_action.activate_copy,false)
 	permission_group.set_allows_action(defines.input_action.activate_cut,false)
@@ -560,6 +562,11 @@ local function backupPlayerStuff(player)
 --		return
 --	end
 
+	if player.online_time < 60 * 60 * 10 then
+		-- don't generate a corpse-chest if the player was fresh on the server
+		return
+	end
+
 	local inventories = {
 		player.get_inventory(defines.inventory.character_guns),
 		player.get_inventory(defines.inventory.character_ammo),
@@ -731,16 +738,19 @@ local function serialize_inventory(inventory)
 	for i = 1, #inventory do
 		local slot = inventory[i]
 		if slot.valid_for_read then
-			if slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
+			if slot.is_selection_tool then
+				-- ignore, until we know how to handle it
+				-- modded onces will need to interact with their mod, so not that easy
+			elseif slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
 					or slot.is_deconstruction_item or slot.is_item_with_tags then
 				local success, export = pcall(slot.export_stack)
 				if not success then
-					print("failed to export item")
+					-- print("failed to export item")
 				else
 					item_exports[i] = export
 				end
 			elseif slot.is_item_with_inventory then
-				print("sending items with inventory is not allowed")
+				-- print("sending items with inventory is not allowed")
 			else
 				item_names[i] = slot.name
 				item_counts[i] = slot.count
@@ -859,9 +869,12 @@ local function defaultSyncConditionCheck()
 	if rockets_launched() == 0 and enemies_left() > 0 then return end
 
 	for _, player in pairs(game.players) do
-		backupPlayerStuff(player)
-		table.insert(global.playersToImport, player.name)
-		player.print("Preparing profile sync...")
+		if player.connected then
+-- should get called when the inventory gets synced anyway. so don't do it here and twice
+--			backupPlayerStuff(player)
+			table.insert(global.playersToImport, player.name)
+			player.print("Preparing profile sync...")
+		end
 	end
 
 	createPermissionGroupsLocal()
@@ -889,24 +902,41 @@ script.on_init(function()
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
+	local player = game.players[event.player_index]
+	if not player then
+		return
+	end
+
+	if not player.admin then
+		mod_gui.get_button_flow(player)["hotpatch-button"].visible = false
+	end
+
 	if not global.inventorySyncEnabled then
 		return
 	end
 
-	local player = game.players[event.player_index]
+
+	-- clear the inv if it was synced before to prevent duping
+	if global.inventorySynced and global.inventorySynced[player.name] then
+		player.get_inventory(defines.inventory.character_guns).clear()
+		player.get_inventory(defines.inventory.character_ammo).clear()
+		player.get_inventory(defines.inventory.character_trash).clear()
+		player.get_inventory(defines.inventory.character_main).clear()
+		player.get_inventory(defines.inventory.character_armor).clear()
+	end
 	table.insert(global.playersToImport, player.name)
 	player.print("Registered you joining the game, preparing profile sync...")
 end)
 
 script.on_event(defines.events.on_player_left_game, function(event)
-	if not (global.inventorySynced and global.inventorySynced[event.player_index]) then
+	local player = game.players[event.player_index]
+	if not (global.inventorySynced and global.inventorySynced[player.name]) then
 		return
 	end
-	local player = game.players[event.player_index]
 	global.playersToExport = global.playersToExport .. serialize_player(player)
 	log("Registered "..player.name.." leaving the game, preparing for upload...")
 
-	global.inventorySynced[event.player_index] = false
+	global.inventorySynced[player.name] = false
 end)
 
 remote.remove_interface("playerManager")
@@ -939,7 +969,7 @@ remote.add_interface("playerManager", {
 
 			global.inventorySynced= global.inventorySynced or {}
 
-			if global.inventorySynced[player.index] == nil then
+			if global.inventorySynced[player.name] == nil then
 				backupPlayerStuff(player)
 			end
 
@@ -973,7 +1003,7 @@ remote.add_interface("playerManager", {
 			deserialize_quickbar(player, quickbarTable)
 			
 			player.print("Inventory synchronized.")
-			global.inventorySynced[player.index] = true
+			global.inventorySynced[player.name] = true
 		else
 			game.print("Player "..playerName.." left before they could get their inventory!")
 		end
@@ -981,7 +1011,8 @@ remote.add_interface("playerManager", {
 	postImportInventory = function(playerName)
 		local player = game.players[playerName]
 		if not player then return end
-		global.inventorySynced[player.index] = true
+		global.inventorySynced[player.name] = true
+		player.print("No inventory on master yet, will upload on leaving.")
 	end,
 	resetInvImportQueue = function()
 		global.playersToImport = {}
