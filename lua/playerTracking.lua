@@ -868,13 +868,11 @@ local function defaultSyncConditionCheck()
 
 	if rockets_launched() == 0 and enemies_left() > 0 then return end
 
-	for _, player in pairs(game.players) do
-		if player.connected then
+	for _, player in pairs(game.connected_players ) do
 -- should get called when the inventory gets synced anyway. so don't do it here and twice
 --			backupPlayerStuff(player)
 			table.insert(global.playersToImport, player.name)
 			player.print("Preparing profile sync...")
-		end
 	end
 
 	createPermissionGroupsLocal()
@@ -912,7 +910,14 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	end
 
 	if not global.inventorySyncEnabled then
+		if player.admin then
+			player.print("Admin-Notice: Inventory sync disabled. " .. rockets_launched() .. " rockets launched, " .. enemies_left() .. " enemies left.")
+		end
 		return
+	else
+		if player.admin then
+			player.print("Admin-Notice: Inventory sync enabled")
+		end
 	end
 
 
