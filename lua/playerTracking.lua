@@ -922,16 +922,27 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	if not player.admin then
 		mod_gui.get_button_flow(player)["hotpatch-button"].visible = false
 	end
-	if global.inventorySyncEnabled and global.inventorySynced and global.inventorySynced[player.name] then
-		-- clear the inv if it was synced before to prevent duping
-		player.get_inventory(defines.inventory.character_guns).clear()
-		player.get_inventory(defines.inventory.character_ammo).clear()
-		player.get_inventory(defines.inventory.character_trash).clear()
-		player.get_inventory(defines.inventory.character_main).clear()
-		player.get_inventory(defines.inventory.character_armor).clear()
-		if player.admin then player.print("Admin-Notice: Inventory sync enabled") end
+	if global.inventorySyncEnabled then
+		if global.inventorySynced and not(global.inventorySynced[player.name] == nil) then
+			-- clear the inv if it was synced before to prevent duping
+			player.get_inventory(defines.inventory.character_guns).clear()
+			player.get_inventory(defines.inventory.character_ammo).clear()
+			player.get_inventory(defines.inventory.character_trash).clear()
+			player.get_inventory(defines.inventory.character_main).clear()
+			player.get_inventory(defines.inventory.character_armor).clear()
+			if player.admin then player.print("Admin-Notice: Inventory sync enabled, player has synced before on server. Clearing inventory.") end
+		else
+			if player.admin then player.print("Admin-Notice: Inventory sync enabled, player has not synced before server.") end
+		end
 	else
-		if player.admin then player.print("Admin-Notice: Inventory sync disabled. " .. rockets_launched() .. " rockets launched, " .. enemies_left() .. " enemies left.") end
+		local invSyncedForPlayer = "no"
+		local inventorySyncEnabledStr = "no"
+		if global.inventorySynced[player.name] then invSyncedForPlayer = "yes" end
+		if global.inventorySyncEnabled then inventorySyncEnabledStr = "yes" end
+		if player.admin then 
+			player.print("Admin-Notice: Inventory sync disabled. " .. rockets_launched() .. " rockets launched, " ..  enemies_left() .. " enemies left")
+			player.print("inventorySyncEnabled=" .. inventorySyncEnabledStr .. ", player exists in inventorySynced: " .. invSyncedForPlayer)
+		end
 	end
 	table.insert(global.playersToImport, player.name)
 	player.print("Registered you joining the game, preparing profile sync...")
@@ -970,9 +981,12 @@ remote.add_interface("playerManager", {
 		end
 	end,
 	importInventory = function(playerName, invData, quickbarData, forceName, spectator, admin, color, chat_color, tag)
-		if not global.inventorySyncEnabled then return end
 		local player = game.players[playerName]
 		if not player then game.print("Player "..playerName.." left before they could get their inventory!") end
+		if not global.inventorySyncEnabled then 
+			player.print("Inventory sync on this server is disabled.")
+			return
+		end
 		local status, err = pcall(function()
 			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
