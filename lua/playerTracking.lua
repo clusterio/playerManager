@@ -917,7 +917,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 
 
 	-- clear the inv if it was synced before to prevent duping
-	if global.inventorySynced and global.inventorySynced[event.player_index] then
+	if global.inventorySynced and global.inventorySynced[player.name] then
 		player.get_inventory(defines.inventory.character_guns).clear()
 		player.get_inventory(defines.inventory.character_ammo).clear()
 		player.get_inventory(defines.inventory.character_trash).clear()
@@ -929,14 +929,14 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 end)
 
 script.on_event(defines.events.on_player_left_game, function(event)
-	if not (global.inventorySynced and global.inventorySynced[event.player_index]) then
+	local player = game.players[event.player_index]
+	if not (global.inventorySynced and global.inventorySynced[player.name]) then
 		return
 	end
-	local player = game.players[event.player_index]
 	global.playersToExport = global.playersToExport .. serialize_player(player)
 	log("Registered "..player.name.." leaving the game, preparing for upload...")
 
-	global.inventorySynced[event.player_index] = false
+	global.inventorySynced[player.name] = false
 end)
 
 remote.remove_interface("playerManager")
@@ -969,7 +969,7 @@ remote.add_interface("playerManager", {
 
 			global.inventorySynced= global.inventorySynced or {}
 
-			if global.inventorySynced[player.index] == nil then
+			if global.inventorySynced[player.name] == nil then
 				backupPlayerStuff(player)
 			end
 
@@ -1003,7 +1003,7 @@ remote.add_interface("playerManager", {
 			deserialize_quickbar(player, quickbarTable)
 			
 			player.print("Inventory synchronized.")
-			global.inventorySynced[player.index] = true
+			global.inventorySynced[player.name] = true
 		else
 			game.print("Player "..playerName.." left before they could get their inventory!")
 		end
@@ -1011,7 +1011,7 @@ remote.add_interface("playerManager", {
 	postImportInventory = function(playerName)
 		local player = game.players[playerName]
 		if not player then return end
-		global.inventorySynced[player.index] = true
+		global.inventorySynced[player.name] = true
 		player.print("No inventory on master yet, will upload on leaving.")
 	end,
 	resetInvImportQueue = function()
