@@ -40,73 +40,58 @@ module.exports = class remoteCommands {
 				if(returnValue) console.log(returnValue);
 				this.messageInterface(`/silent-command remote.call("playerManager", "resetInvImportQueue")`);
 				this.messageInterface(`/silent-command remote.call("playerManager", "createPermissionGroups")`);
-
+				
+				this.syncingInventory = false;
+				this.syncingInventoryTries = 0;
 				let syncInventory = async ()=>{
-					let playerName = await messageInterface(`/silent-command remote.call("playerManager", "getImportTask")`);
-					playerName = playerName.trim();
-					if(playerName){
-						messageInterface(`Downloading ${playerName}'s inventory`);
-						// set inventory
-						let playerData = (await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/playerList`)).body;
-						let playerIsAdmin = false;
-						let playerExistsInMaster = false;
-						playerData.forEach(player => {
-							if(player.name == playerName){
-								playerExistsInMaster = true;
+					this.syncingInventoryTries++;
+					if(this.syncingInventory) {
+						if(this.syncingInventoryTries > 5) {
+							console.log('Warning: Inventory syncing slow. Tries: ' + this.syncingInventoryTries);
+						}
+						return;
+					}
+					this.syncingInventory = true;
+					do {
+						let playerName = await messageInterface(`/silent-command remote.call("playerManager", "getImportTask")`);
+						playerName = playerName.trim();
+						if(playerName){
+							// check is player is banned
+							let isPlayerBanned = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+							if(isPlayerBanned.body.msg === true){
+								await messageInterface(`/ban ${playerName}`);
+								await messageInterface(`/kick ${playerName}`);
+							}
+							// import inventory
+							let player = (await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/getPlayer`, { "name": playerName, "token": this.config.masterAuthToken})).body.player;
+							let playerIsAdmin = false;
+							if(player){
 								if(player.inventory){
+									messageInterface(`Downloading ${playerName}'s inventory`);
 									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.quickbar}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
-									if(player.admin === "true") {
-										playerIsAdmin = true;
-									}
+								}
+								if(player.admin === "true") {
+									playerIsAdmin = true;
+									await messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Admin")`);
+								}
+							} else {
+								await messageInterface(`/silent-command remote.call("playerManager", "postImportInventory", "${playerName}")`);
+							}
+							if(!playerIsAdmin) {
+								let isPlayerWhitelisted = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerWhitelisted`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+								if(isPlayerWhitelisted.body.msg === true){
+									await messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
 								}
 							}
-						});
-
-						if(!playerExistsInMaster) {
-							await messageInterface(`/silent-command remote.call("playerManager", "postImportInventory", "${playerName}")`);
-						}
-
-						// had to move whitelist code to here (player on join) as whitelist code can't run on players that haven't joined
-						// also deals with admin permissioning
-						if(playerIsAdmin) {
-							messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Admin")`);
 						} else {
-
-							let whitelist = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/whitelistedPlayers`);
-							whitelist.body.forEach(whitelistedPlayerName => {
-								if(whitelistedPlayerName == playerName){
-									messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
-								}
-							});
+							this.syncingInventory = false;
+							this.syncingInventoryTries = 0;
 						}
-					}
+					} while (syncingInventory);
 				}
 				setInterval(syncInventory, 2000);
 			}
 			
-			// sync whitelist/bans with master
-			let bans = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/bannedPlayers`);
-			let whitelist = await needle("get", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/whitelistedPlayers`);
-			if(!bans || !bans.body || !bans.body.forEach || !whitelist || !whitelist.body || !whitelist.body.forEach){
-				console.error(new Error("ERROR: PLAYERMANAGER NOT FOUND ON SERVER, NOT IMPORTING WHITELIST AND BANLIST. THIS CONFIGURATION IS UNSUPPORTED AND WILL CAUSE TROUBLE"))
-				return false;
-			}
-			
-			messageInterface("/whitelist clear");
-			messageInterface("/banlist clear");
-			messageInterface("/silent-command game.print('Cleared whitelist and banlist')");
-			console.log("/log Cleared whitelist and banlist");
-			
-			await sleep(5);
-			
-			bans.body.forEach(ban => {
-				messageInterface(`/ban ${ban.factorioName} ${ban.reason}`);
-			});
-			whitelist.body.forEach(name => {
-				let cmd = `/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${name}", "Standard")`
-				messageInterface(cmd);
-				console.log(cmd);
-			});
 		})().catch(e => console.log(e));
 	}
 	async getCommand(file){

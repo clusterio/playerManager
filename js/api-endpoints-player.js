@@ -4,6 +4,25 @@ module.exports = masterPlugin => {
     masterPlugin.app.get("/api/playerManager/playerList", (req,res) => {
 		res.send(masterPlugin.managedPlayers);
 	});
+	masterPlugin.app.post("/api/playerManager/getPlayer", async (req,res) => {
+		if(req.body
+			&& req.body.name
+			&& typeof req.body.name == "string"
+			&& req.body.token
+			&& typeof req.body.token == "string"){
+				let playerIndex = util.findInArray("name", req.body.name, masterPlugin.managedPlayers);
+
+				res.send({
+					ok:true,
+					player:masterPlugin.managedPlayers[playerIndex]
+				});
+		} else {
+			res.send({
+				ok:false,
+				msg:"Invalid parameters, please send {name, token}",
+			});
+		}
+	});
     masterPlugin.app.post("/api/playerManager/deletePlayer", async (req,res) => {
 		if(req.body
 		&& req.body.name
@@ -29,6 +48,59 @@ module.exports = masterPlugin => {
 			res.send({
 				ok:false,
 				msg:"Invalid parameters, please send {name, token}",
+			});
+		}
+	});
+	masterPlugin.app.post("/api/playerManager/isPlayerWhitelisted", async (req,res) => {
+		if(req.body
+			&& typeof req.body.factorioName == "string"
+			&& typeof req.body.token == "string"){
+				let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
+	
+				if(!permissions.cluster.includes("whitelist")) {
+					res.send({
+						ok:false,
+						msg:"Insufficient permissions, make sure you have permissions.cluster.whitelist",
+					});
+					return;
+				}
+
+				res.send({
+					ok:true,
+					msg:masterPlugin.whitelist.includes(req.body.factorioName),
+				});				
+		} else {
+			console.log("nok")
+			res.send({
+				ok:false,
+				msg:"Invalid parameters, please send {factorioName, token}",
+			});
+		}
+	});
+	masterPlugin.app.post("/api/playerManager/isPlayerBanned", async (req,res) => {
+		if(req.body
+			&& typeof req.body.factorioName == "string"
+			&& typeof req.body.token == "string"){
+				let permissions = await masterPlugin.getPermissions(req.body.token, masterPlugin.users);
+	
+				if(!permissions.cluster.includes("banlist")) {
+					res.send({
+						ok:false,
+						msg:"Insufficient permissions, make sure you have permissions.cluster.banlist",
+					});
+					return;
+				}
+
+				let isBanned = util.findInArray("factorioName", req.body.factorioName, masterPlugin.banlist).length === 1;		
+				res.send({
+					ok:true,
+					msg:isBanned,
+				});				
+		} else {
+			console.log("nok")
+			res.send({
+				ok:false,
+				msg:"Invalid parameters, please send {factorioName, token}",
 			});
 		}
 	});
