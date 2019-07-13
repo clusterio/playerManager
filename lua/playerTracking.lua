@@ -557,6 +557,18 @@ local function createPermissionGroupsLocal()
 	setAdminPermissions(game.permissions.get_group('Admin'))
 end
 
+local function setPlayerPermissionGroupLocal(playerName, permissionGroupName)
+	-- if player is admin, dont change group. This is to stop the whitelist
+	-- from overwriting the admin list.
+	local player = game.permissions.get_group("Admin").players[playerName]
+	if player then return end
+	if not game.players[playerName] then return end
+	game.permissions.get_group(permissionGroupName).add_player(playerName)
+	if permissionGroupName == "Admin" then
+		game.players[playerName].admin = true
+	end
+end
+
 local function backupPlayerStuff(player)
 --	if not (player and player.character) then
 --		return
@@ -625,10 +637,13 @@ local function deserialize_grid(grid, data)
 end
 
 local function deserialize_inventory(inventory, data)
-    local item_names, item_counts, item_durabilities,
-    item_ammos, item_exports, item_labels, item_grids
-    = data.item_names, data.item_counts, data.item_durabilities,
-    data.item_ammos, data.item_exports, data.item_labels, data.item_grids
+	local item_names = data.item_names or {}
+	local item_counts = data.item_counts or {}
+	local item_durabilities = data.item_durabilities or {}
+	local item_ammos = data.item_ammos or {}
+	local item_exports = data.item_exports or {}
+	local item_labels = data.item_labels or {}
+	local item_grids = data.item_grids or {}
     for idx, name in pairs(item_names) do
         local slot = inventory[idx]
         slot.set_stack({
@@ -906,36 +921,32 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	if not player then
 		return
 	end
-
 	if not player.admin then
 		mod_gui.get_button_flow(player)["hotpatch-button"].visible = false
 	end
-
-	if not global.inventorySyncEnabled then
-		return
-	end
-
-
-	-- clear the inv if it was synced before to prevent duping
-	if global.inventorySynced and global.inventorySynced[player.name] then
-		player.get_inventory(defines.inventory.character_guns).clear()
-		player.get_inventory(defines.inventory.character_ammo).clear()
-		player.get_inventory(defines.inventory.character_trash).clear()
-		player.get_inventory(defines.inventory.character_main).clear()
-		player.get_inventory(defines.inventory.character_armor).clear()
+	if global.inventorySyncEnabled then
+		-- clear the inv if it was synced before to prevent duping
+		if global.inventorySynced and global.inventorySynced[player.name] then
+			player.get_inventory(defines.inventory.character_guns).clear()
+			player.get_inventory(defines.inventory.character_ammo).clear()
+			player.get_inventory(defines.inventory.character_trash).clear()
+			player.get_inventory(defines.inventory.character_main).clear()
+			player.get_inventory(defines.inventory.character_armor).clear()
+		end
 	end
 	table.insert(global.playersToImport, player.name)
 	player.print("Registered you joining the game, preparing profile sync...")
 end)
 
 script.on_event(defines.events.on_player_left_game, function(event)
+	if not global.inventorySyncEnabled then return end
 	local player = game.players[event.player_index]
+	if not player then log('ERROR: player is null in on_player_left_game for player_index='..event.player_index) end
 	if not (global.inventorySynced and global.inventorySynced[player.name]) then
 		return
 	end
 	global.playersToExport = global.playersToExport .. serialize_player(player)
 	log("Registered "..player.name.." leaving the game, preparing for upload...")
-
 	global.inventorySynced[player.name] = false
 end)
 
@@ -960,9 +971,10 @@ remote.add_interface("playerManager", {
 		end
 	end,
 	importInventory = function(playerName, invData, quickbarData, forceName, spectator, admin, color, chat_color, tag)
+		if not global.inventorySyncEnabled then return end
 		local player = game.players[playerName]
-		if player then
-
+		if not player then game.print("Player "..playerName.." left before they could get their inventory!") end
+		local status, err = pcall(function()
 			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
 			local ok, quickbarTable = serpent.load(quickbarData)
@@ -988,24 +1000,26 @@ remote.add_interface("playerManager", {
 			player.get_inventory(defines.inventory.character_main).clear()
 			-- clear armor last to avoid inventory spilling
 			player.get_inventory(defines.inventory.character_armor).clear()
-			
-			-- 3: pistol.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3])
-			-- 4: Ammo.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4])
-			-- 5: armor.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5])
-			-- 8: express-transport-belt (trash slots)
-			deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8])
-			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
-			deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1])
 
-			deserialize_quickbar(player, quickbarTable)
-			
+			-- 3: pistol.
+			deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3] or {})
+			-- 4: Ammo.
+			deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4] or {})
+			-- 5: armor.
+			deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5] or {})
+			-- 8: express-transport-belt (trash slots)
+			deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8] or {})
+			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
+			deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1] or {})
+
+			deserialize_quickbar(player, quickbarTable or {})
+
 			player.print("Inventory synchronized.")
 			global.inventorySynced[player.name] = true
-		else
-			game.print("Player "..playerName.." left before they could get their inventory!")
+		end)
+		if err then 
+			log("ERROR CAUGHT in importInventory: ")
+			log(err)
 		end
 	end,
 	postImportInventory = function(playerName)
@@ -1025,19 +1039,28 @@ remote.add_interface("playerManager", {
 		global.playersToExport = ""
 	end,
 	setPlayerPermissionGroup = function(playerName, permissionGroupName)
-		-- if player is admin, dont change group. This is to stop the whitelist
-		-- from overwriting the admin list.
-		local player = game.permissions.get_group("Admin").players[playerName]
-		if player then return end
-		log('Adding '..playerName..' to group '..permissionGroupName)
-		game.permissions.get_group(permissionGroupName).add_player(playerName)
-		if permissionGroupName == "Admin" then
-			game.players[playerName].admin = true
-		end			
+		setPlayerPermissionGroupLocal(playerName, permissionGroupName)
 	end,
 	-- Creates permission group definitions.
 	createPermissionGroups = function()		
 		createPermissionGroupsLocal();
+	end,
+	batchWhitelist = function(whitelistJson)
+		local whitelist = game.json_to_table(whitelistJson)
+		log("Whitelist batch processing "..#whitelist.." players...")
+		for _, playerName in pairs(whitelist) do
+			--log("Whitelisting player '"..playerName.."'")
+			setPlayerPermissionGroupLocal(playerName, "Standard")
+		end
+		log("Whitelist batch done")
+	end,
+	batchBanlist = function(banlistJson)
+		local banlist = game.json_to_table(banlistJson)
+		log("Banlist batch processing "..#banlist.." players...")
+		for _, banlistItem in pairs(banlist) do
+			--log("Banning player '"..banlistItem.factorioName.."'")
+			game.ban_player(banlistItem.factorioName)
+		end
+		log("Banlist batch done")
 	end
-
 })
