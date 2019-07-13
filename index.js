@@ -40,9 +40,19 @@ module.exports = class remoteCommands {
 				if(returnValue) console.log(returnValue);
 				this.messageInterface(`/silent-command remote.call("playerManager", "resetInvImportQueue")`);
 				this.messageInterface(`/silent-command remote.call("playerManager", "createPermissionGroups")`);
-
+				
+				this.syncingInventory = false;
+				this.syncingInventoryTries = 0;
 				let syncInventory = async ()=>{
 					let processingPlayer = false;
+					this.syncingInventoryTries++;
+					if(this.syncingInventory) {
+						if(this.syncingInventoryTries > 5) {
+							console.log('Warning: Inventory syncing slow. Tries: ' + this.syncingInventoryTries);
+						}
+						return;
+					}
+					this.syncingInventory = true;
 					do {
 						let playerName = await messageInterface(`/silent-command remote.call("playerManager", "getImportTask")`);
 						playerName = playerName.trim();
@@ -75,6 +85,9 @@ module.exports = class remoteCommands {
 									await messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
 								}
 							}
+						} else {
+							this.syncingInventory = false;
+							this.syncingInventoryTries = 0;
 						}
 					} while (processingPlayer);
 				}
