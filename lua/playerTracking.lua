@@ -883,13 +883,11 @@ local function defaultSyncConditionCheck()
 
 	if rockets_launched() == 0 and enemies_left() > 0 then return end
 
-	for _, player in pairs(game.players) do
-		if player.connected then
+	for _, player in pairs(game.connected_players ) do
 -- should get called when the inventory gets synced anyway. so don't do it here and twice
 --			backupPlayerStuff(player)
 			table.insert(global.playersToImport, player.name)
 			player.print("Preparing profile sync...")
-		end
 	end
 
 	createPermissionGroupsLocal()
@@ -924,15 +922,16 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	if not player.admin then
 		mod_gui.get_button_flow(player)["hotpatch-button"].visible = false
 	end
-	if global.inventorySyncEnabled then
+	if global.inventorySyncEnabled and global.inventorySynced and global.inventorySynced[player.name] then
 		-- clear the inv if it was synced before to prevent duping
-		if global.inventorySynced and global.inventorySynced[player.name] then
-			player.get_inventory(defines.inventory.character_guns).clear()
-			player.get_inventory(defines.inventory.character_ammo).clear()
-			player.get_inventory(defines.inventory.character_trash).clear()
-			player.get_inventory(defines.inventory.character_main).clear()
-			player.get_inventory(defines.inventory.character_armor).clear()
-		end
+		player.get_inventory(defines.inventory.character_guns).clear()
+		player.get_inventory(defines.inventory.character_ammo).clear()
+		player.get_inventory(defines.inventory.character_trash).clear()
+		player.get_inventory(defines.inventory.character_main).clear()
+		player.get_inventory(defines.inventory.character_armor).clear()
+		if player.admin then player.print("Admin-Notice: Inventory sync enabled") end
+	else
+		if player.admin then player.print("Admin-Notice: Inventory sync disabled. " .. rockets_launched() .. " rockets launched, " .. enemies_left() .. " enemies left.") end
 	end
 	table.insert(global.playersToImport, player.name)
 	player.print("Registered you joining the game, preparing profile sync...")
