@@ -753,10 +753,7 @@ local function serialize_inventory(inventory)
 	for i = 1, #inventory do
 		local slot = inventory[i]
 		if slot.valid_for_read then
-			if slot.is_selection_tool then
-				-- ignore, until we know how to handle it
-				-- modded onces will need to interact with their mod, so not that easy
-			elseif slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
+			if slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
 					or slot.is_deconstruction_item or slot.is_item_with_tags then
 				local success, export = pcall(slot.export_stack)
 				if not success then
@@ -766,6 +763,9 @@ local function serialize_inventory(inventory)
 				end
 			elseif slot.is_item_with_inventory then
 				-- print("sending items with inventory is not allowed")
+			elseif slot.is_selection_tool then
+				-- ignore, until we know how to handle it
+				-- modded onces will need to interact with their mod, so not that easy
 			else
 				item_names[i] = slot.name
 				item_counts[i] = slot.count
@@ -878,6 +878,9 @@ local function defaultSyncConditionCheck()
 		return
 	end
 
+	local newArray = {}	for k,v in pairs(global.inventorySynced) do if k ~= tonumber(k) then newArray[k] = v end end
+
+
 	-- if rockets_launched() == 0 then return end
 	-- if enemies_left() > 0 then return end
 
@@ -937,7 +940,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	else
 		local invSyncedForPlayer = "no"
 		local inventorySyncEnabledStr = "no"
-		if global.inventorySynced[player.name] then invSyncedForPlayer = "yes" end
+		if global.inventorySynced and global.inventorySynced[player.name] then invSyncedForPlayer = "yes" end
 		if global.inventorySyncEnabled then inventorySyncEnabledStr = "yes" end
 		if player.admin then 
 			player.print("Admin-Notice: Inventory sync disabled. " .. rockets_launched() .. " rockets launched, " ..  enemies_left() .. " enemies left")
