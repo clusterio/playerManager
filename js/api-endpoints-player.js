@@ -10,11 +10,9 @@ module.exports = masterPlugin => {
 			&& typeof req.body.name == "string"
 			&& req.body.token
 			&& typeof req.body.token == "string"){
-				let playerIndex = util.findInArray("name", req.body.name, masterPlugin.managedPlayers);
-
 				res.send({
 					ok:true,
-					player:masterPlugin.managedPlayers[playerIndex]
+					player:masterPlugin.managedPlayers.find(user => user.name === req.body.name)
 				});
 		} else {
 			res.send({
