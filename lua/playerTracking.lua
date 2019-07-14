@@ -970,7 +970,7 @@ script.on_event(defines.events.on_player_left_game, function(event)
 	if not global.inventorySyncEnabled then return end
 	local player = game.players[event.player_index]
 	if not player then log('ERROR: player is null in on_player_left_game for player_index='..event.player_index) end
-	if not (global.inventorySynced and global.inventorySynced[player.name]) then
+	if not (global.inventorySynced and global.inventorySynced[player.name] == true) then
 		return
 	end
 	global.playersToExport = global.playersToExport .. serialize_player(player)
