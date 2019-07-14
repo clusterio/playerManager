@@ -932,11 +932,18 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	if global.inventorySyncEnabled then
 		if global.inventorySynced and not(global.inventorySynced[player.name] == nil) then
 			-- clear the inv if it was synced before to prevent duping
-			player.get_inventory(defines.inventory.character_guns).clear()
-			player.get_inventory(defines.inventory.character_ammo).clear()
-			player.get_inventory(defines.inventory.character_trash).clear()
-			player.get_inventory(defines.inventory.character_main).clear()
-			player.get_inventory(defines.inventory.character_armor).clear()
+			for _, invType in {
+				defines.inventory.character_guns,
+				defines.inventory.character_ammo,
+				defines.inventory.character_trash,
+				defines.inventory.character_main,
+				defines.inventory.character_armor
+			} do
+				local inv = player.get_inventory(invType)
+				if inv then
+					inv.clear()
+				end
+			end
 			if player.admin then player.print("Admin-Notice: Inventory sync enabled, player has synced before on server. Clearing inventory.") end
 		else
 			if player.admin then player.print("Admin-Notice: Inventory sync enabled, player has not synced before server.") end
