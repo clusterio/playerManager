@@ -918,6 +918,10 @@ script.on_init(function()
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
+	if not(event and event.player_index) then
+		return
+	end
+
 	local player = game.players[event.player_index]
 	if not player then
 		return
@@ -952,6 +956,10 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 end)
 
 script.on_event(defines.events.on_player_left_game, function(event)
+	if not(event and event.player_index) then
+		return
+	end
+
 	if not global.inventorySyncEnabled then return end
 	local player = game.players[event.player_index]
 	if not player then log('ERROR: player is null in on_player_left_game for player_index='..event.player_index) end
