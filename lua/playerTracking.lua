@@ -854,6 +854,8 @@ local function serialize_player(player)
 
 	local quickbar = serialize_quickbar(player)
 	playerData = playerData .. "~quickbar:"..serpent.line(quickbar)
+
+	global.inventoryLastSyncTick[player.name] = game.tick
 	return playerData
 end
 
@@ -873,8 +875,16 @@ local function enemies_left()
 	return enemies_left
 end
 
-local function defaultSyncConditionCheck()
+local function defaultSyncConditionCheck(event)
+	global.inventoryLastSyncTick = global.inventoryLastSyncTick or {}
 	if global.inventorySyncEnabled then
+		for _, player in pairs(game.connected_players ) do
+			if global.inventorySynced[player.name] == true then
+				if global.inventoryLastSyncTick[player.name] == nil or global.inventoryLastSyncTick[player.name] < event.tick - (60*60) then
+					global.playersToExport = global.playersToExport .. serialize_player(player)
+				end
+			end
+		end
 		return
 	end
 
@@ -905,6 +915,7 @@ script.on_init(function()
 	global.inventory_types = {}
 	global.inventorySynced = {} -- array of player_index=>bool
 	global.inventorySyncEnabled = true
+	global.inventoryLastSyncTick = {}
 	do
 		local map = {}
 		for _, inventory_type in pairs(defines.inventory) do
