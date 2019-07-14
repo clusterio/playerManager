@@ -88,7 +88,7 @@ module.exports = class remoteCommands {
 							this.syncingInventoryTries = 0;
 						}
 					} while (this.syncingInventory);
-				}
+				};
 				setInterval(syncInventory, 2000);
 			}
 			
