@@ -56,14 +56,19 @@ module.exports = class remoteCommands {
 						let playerName = await messageInterface(`/silent-command remote.call("playerManager", "getImportTask")`);
 						playerName = playerName.trim();
 						if(playerName){
+                            console.log("Syncing: " + playerName);
 							// check is player is banned
+                            console.log("isBanned?: " + playerName);
 							let isPlayerBanned = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+                            console.log("isBanned done: " + playerName);
 							if(isPlayerBanned.body.msg === true){
 								await messageInterface(`/ban ${playerName}`);
 								await messageInterface(`/kick ${playerName}`);
 							}
 							// import inventory
+                            console.log("getPlayer: " + playerName);
 							let player = (await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/getPlayer`, { "name": playerName, "token": this.config.masterAuthToken})).body.player;
+                            console.log("getPlayer done: " + playerName);
 							let playerIsAdmin = false;
 							if(player){
 								if(player.inventory){
@@ -78,11 +83,14 @@ module.exports = class remoteCommands {
 								await messageInterface(`/silent-command remote.call("playerManager", "postImportInventory", "${playerName}")`);
 							}
 							if(!playerIsAdmin) {
+                                console.log("isPlayerWhitelisted: " + playerName);
 								let isPlayerWhitelisted = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerWhitelisted`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+                                console.log("isPlayerWhitelisted done: " + playerName);
 								if(isPlayerWhitelisted.body.msg === true){
 									await messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
 								}
 							}
+                            console.log("Syncing done: " + playerName);
 						} else {
 							this.syncingInventory = false;
 							this.syncingInventoryTries = 0;
