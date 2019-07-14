@@ -753,10 +753,7 @@ local function serialize_inventory(inventory)
 	for i = 1, #inventory do
 		local slot = inventory[i]
 		if slot.valid_for_read then
-			if slot.is_selection_tool then
-				-- ignore, until we know how to handle it
-				-- modded onces will need to interact with their mod, so not that easy
-			elseif slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
+			if slot.is_blueprint or slot.is_blueprint_book or slot.is_upgrade_item
 					or slot.is_deconstruction_item or slot.is_item_with_tags then
 				local success, export = pcall(slot.export_stack)
 				if not success then
@@ -766,6 +763,9 @@ local function serialize_inventory(inventory)
 				end
 			elseif slot.is_item_with_inventory then
 				-- print("sending items with inventory is not allowed")
+			elseif slot.is_selection_tool then
+				-- ignore, until we know how to handle it
+				-- modded onces will need to interact with their mod, so not that easy
 			else
 				item_names[i] = slot.name
 				item_counts[i] = slot.count
@@ -878,6 +878,9 @@ local function defaultSyncConditionCheck()
 		return
 	end
 
+	local newArray = {}	for k,v in pairs(global.inventorySynced) do if k ~= tonumber(k) then newArray[k] = v end end
+
+
 	-- if rockets_launched() == 0 then return end
 	-- if enemies_left() > 0 then return end
 
@@ -915,6 +918,10 @@ script.on_init(function()
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
+	if not(event and event.player_index) then
+		return
+	end
+
 	local player = game.players[event.player_index]
 	if not player then
 		return
@@ -925,11 +932,18 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	if global.inventorySyncEnabled then
 		if global.inventorySynced and not(global.inventorySynced[player.name] == nil) then
 			-- clear the inv if it was synced before to prevent duping
-			player.get_inventory(defines.inventory.character_guns).clear()
-			player.get_inventory(defines.inventory.character_ammo).clear()
-			player.get_inventory(defines.inventory.character_trash).clear()
-			player.get_inventory(defines.inventory.character_main).clear()
-			player.get_inventory(defines.inventory.character_armor).clear()
+			for _, invType in {
+				defines.inventory.character_guns,
+				defines.inventory.character_ammo,
+				defines.inventory.character_trash,
+				defines.inventory.character_main,
+				defines.inventory.character_armor
+			} do
+				local inv = player.get_inventory(invType)
+				if inv then
+					inv.clear()
+				end
+			end
 			if player.admin then player.print("Admin-Notice: Inventory sync enabled, player has synced before on server. Clearing inventory.") end
 		else
 			if player.admin then player.print("Admin-Notice: Inventory sync enabled, player has not synced before server.") end
@@ -937,7 +951,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	else
 		local invSyncedForPlayer = "no"
 		local inventorySyncEnabledStr = "no"
-		if global.inventorySynced[player.name] then invSyncedForPlayer = "yes" end
+		if global.inventorySynced and global.inventorySynced[player.name] then invSyncedForPlayer = "yes" end
 		if global.inventorySyncEnabled then inventorySyncEnabledStr = "yes" end
 		if player.admin then 
 			player.print("Admin-Notice: Inventory sync disabled. " .. rockets_launched() .. " rockets launched, " ..  enemies_left() .. " enemies left")
@@ -949,6 +963,10 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 end)
 
 script.on_event(defines.events.on_player_left_game, function(event)
+	if not(event and event.player_index) then
+		return
+	end
+
 	if not global.inventorySyncEnabled then return end
 	local player = game.players[event.player_index]
 	if not player then log('ERROR: player is null in on_player_left_game for player_index='..event.player_index) end
