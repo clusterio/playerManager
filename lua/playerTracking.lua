@@ -1074,11 +1074,11 @@ remote.add_interface("playerManager", {
 		global.playersToImport = {}
 	end,
 	exportPlayers = function()
-		rcon.print(global.playersToExport)
 		if global.playersToExport and string.len(global.playersToExport) > 10 then
+		        rcon.print(global.playersToExport)
 			game.print("Exported player profiles")
+			global.playersToExport = ""
 		end
-		global.playersToExport = ""
 	end,
 	setPlayerPermissionGroup = function(playerName, permissionGroupName)
 		setPlayerPermissionGroupLocal(playerName, permissionGroupName)
