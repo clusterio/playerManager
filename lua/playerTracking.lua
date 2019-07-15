@@ -616,6 +616,21 @@ local function backupPlayerStuff(player)
 	end
 end
 
+local function clearInventory(player)
+	for _, invType in pairs({
+		defines.inventory.character_guns,
+		defines.inventory.character_ammo,
+		defines.inventory.character_trash,
+		defines.inventory.character_main,
+		defines.inventory.character_armor
+	}) do
+		local inv = player.get_inventory(invType)
+		if inv then
+			inv.clear()
+		end
+	end
+end
+
 local function deserialize_grid(grid, data)
 	grid.clear()
 	local names, energy, shield, xs, ys = data.names, data.energy, data.shield, data.xs, data.ys
@@ -943,18 +958,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	if global.inventorySyncEnabled then
 		if global.inventorySynced and not(global.inventorySynced[player.name] == nil) then
 			-- clear the inv if it was synced before to prevent duping
-			for _, invType in pairs({
-				defines.inventory.character_guns,
-				defines.inventory.character_ammo,
-				defines.inventory.character_trash,
-				defines.inventory.character_main,
-				defines.inventory.character_armor
-			}) do
-				local inv = player.get_inventory(invType)
-				if inv then
-					inv.clear()
-				end
-			end
+			clearInventory(player)
 			if player.admin then player.print("Admin-Notice: Inventory sync enabled, player has synced before on server. Clearing inventory.") end
 		else
 			if player.admin then player.print("Admin-Notice: Inventory sync enabled, player has not synced before server.") end
@@ -1036,12 +1040,7 @@ remote.add_interface("playerManager", {
 			player.tag = tag
 			
 			-- Clear old inventories
-			player.get_inventory(defines.inventory.character_guns).clear()
-			player.get_inventory(defines.inventory.character_ammo).clear()
-			player.get_inventory(defines.inventory.character_trash).clear()
-			player.get_inventory(defines.inventory.character_main).clear()
-			-- clear armor last to avoid inventory spilling
-			player.get_inventory(defines.inventory.character_armor).clear()
+			clearInventory(player)
 
 			-- 3: pistol.
 			deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3] or {})
