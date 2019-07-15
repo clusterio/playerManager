@@ -28,7 +28,6 @@ module.exports = class remoteCommands {
 			}
 		});
 		
-		
 		(async ()=>{
 			let hotpatchInstallStatus = await this.checkHotpatchInstallation();
 			this.hotpatchStatus = hotpatchInstallStatus;
@@ -40,67 +39,65 @@ module.exports = class remoteCommands {
 				if(returnValue) console.log(returnValue);
 				this.messageInterface(`/silent-command remote.call("playerManager", "resetInvImportQueue")`);
 				this.messageInterface(`/silent-command remote.call("playerManager", "createPermissionGroups")`);
-				
-				this.syncingInventory = false;
-				this.syncingInventoryTries = 0;
-				let syncInventory = async ()=>{
-					this.syncingInventoryTries++;
-					if(this.syncingInventory) {
-						if(this.syncingInventoryTries > 5) {
-							console.log('Warning: Inventory syncing slow. Tries: ' + this.syncingInventoryTries);
-						}
-						return;
-					}
-					this.syncingInventory = true;
-					do {
-						let playerName = await messageInterface(`/silent-command remote.call("playerManager", "getImportTask")`);
-						playerName = playerName.trim();
-						if(playerName){
-                            console.log("Syncing: " + playerName);
-							// check is player is banned
-                            console.log("isBanned?: " + playerName);
-							let isPlayerBanned = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken});
-                            console.log("isBanned done: " + playerName);
-							if(isPlayerBanned.body.msg === true){
-								await messageInterface(`/ban ${playerName}`);
-								await messageInterface(`/kick ${playerName}`);
-							}
-							// import inventory
-                            console.log("getPlayer: " + playerName);
-							let player = (await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/getPlayer`, { "name": playerName, "token": this.config.masterAuthToken})).body.player;
-                            console.log("getPlayer done: " + playerName);
-							let playerIsAdmin = false;
-							if(player){
-								if(player.inventory){
-									messageInterface(`Downloading ${playerName}'s inventory`);
-									messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.quickbar}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
-								}
-								if(player.admin === "true") {
-									playerIsAdmin = true;
-									await messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Admin")`);
-								}
-							} else {
-								await messageInterface(`/silent-command remote.call("playerManager", "postImportInventory", "${playerName}")`);
-							}
-							if(!playerIsAdmin) {
-                                console.log("isPlayerWhitelisted: " + playerName);
-								let isPlayerWhitelisted = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerWhitelisted`, { "factorioName": playerName, "token": this.config.masterAuthToken});
-                                console.log("isPlayerWhitelisted done: " + playerName);
-								if(isPlayerWhitelisted.body.msg === true){
-									await messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
-								}
-							}
-                            console.log("Syncing done: " + playerName);
-						} else {
-							this.syncingInventory = false;
-							this.syncingInventoryTries = 0;
-						}
-					} while (this.syncingInventory);
-				};
-				setInterval(syncInventory, 2000);
 			}
 			
 		})().catch(e => console.log(e));
+	}
+	async importPlayer(playerName) {
+		console.log("isBanned?: " + playerName);
+		let isPlayerBanned = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+		console.log("isBanned done: " + playerName);
+		if(isPlayerBanned.body.msg === true){
+			this.messageInterface(`/ban ${playerName}`);
+			this.messageInterface(`/kick ${playerName}`);
+		}
+		// import inventory
+		console.log("getPlayer: " + playerName);
+		let player = (await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/getPlayer`, { "name": playerName, "token": this.config.masterAuthToken})).body.player;
+		console.log("getPlayer done: " + playerName);
+		let playerIsAdmin = false;
+		if(player){
+			if(player.inventory){
+				this.messageInterface(`Downloading ${playerName}'s inventory`);
+				this.messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.quickbar}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
+			}
+			if(player.admin === "true") {
+				playerIsAdmin = true;
+				this.messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Admin")`);
+			}
+		} else {
+			this.messageInterface(`/silent-command remote.call("playerManager", "postImportInventory", "${playerName}")`);
+		}
+		if(!playerIsAdmin) {
+			console.log("isPlayerWhitelisted: " + playerName);
+			let isPlayerWhitelisted = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerWhitelisted`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+			console.log("isPlayerWhitelisted done: " + playerName);
+			if(isPlayerWhitelisted.body.msg === true){
+				this.messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
+			}
+		}
+		console.log("Player import done for player: " + playerName);
+	}
+	// Gets sent in packets, split by \n
+	scriptOutput(data) {
+		if(data == null) {
+			return;
+		}
+		console.log(`Got data, length: ${data.length}.`);
+		if(data.startsWith("IMPORT")) {
+			let playerName = data.substring(6);
+			console.log(`Importing player ${playerName}...`);
+			this.importPlayer(playerName);
+		}
+		else if(data.startsWith("EXPORT")) {
+			console.log("Exporting player. Sending to playerManagerSetPlayerdata...");
+			this.socket.emit("playerManagerSetPlayerdata", data.substring(6).replace(/(\r\n\t|\n|\r\t)/gm, ""));
+			console.log(`Player export done.`)
+		}
+		else {
+			console.log("ERROR: Cannot parse script output. Output:");
+			console.log(data);
+		}
 	}
 	async getCommand(file){
 		this.commandCache = this.commandCache || {};

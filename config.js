@@ -8,4 +8,5 @@ module.exports = {
 	binary: "nodePackage",
 	description: "The clusterio player management tool aims to track players, their statistics and (possibly) their permissions on the cluster.",
 	masterPlugin: "masterPlugin.js",
+	scriptOutputFileSubscription: "playerManager.txt"
 }
