@@ -1076,7 +1076,7 @@ remote.add_interface("playerManager", {
 	exportPlayers = function()
 		if global.playersToExport and string.len(global.playersToExport) > 10 then
 		        rcon.print(global.playersToExport)
-			game.print("Exported player profiles")
+			log("Exported player profiles")
 			global.playersToExport = ""
 		end
 	end,
