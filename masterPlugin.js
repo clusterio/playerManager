@@ -238,17 +238,7 @@ class masterPlugin {
 		setTimeout(() => this.pollForPlayers(socket, instanceID), this.getPlayerPollingTime(instanceID));
 	}
 	getPlayerPollingTime(instanceID){
-		if(!this.managedPlayers.length) return 10000;
-		
-		let playersOnThisInstance = 0;
-		for(let i in this.managedPlayers){
-			if(this.managedPlayers[i].connected === "true" && this.managedPlayers[i].instanceID == instanceID){
-				++playersOnThisInstance;
-			}
-		}
-		if(playersOnThisInstance > 0){
-			return 10;
-		} else return 1000;
+		return 1000;
 	}
 	parseData(data, sharedData){
 		let parsedData = [];
