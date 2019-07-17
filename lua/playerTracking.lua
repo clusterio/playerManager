@@ -844,6 +844,32 @@ local function deserialize_quickbar(player, quickbar)
 	end
 end
 
+local function serialize_requests(player)
+    local requests = {}
+    for i = 1, player.force.character_logistic_slot_count do
+        requests[i] = player.character.get_request_slot(i)
+    end
+    return requests
+end
+
+local function deserialize_requests(player, requests)
+	for index, name in ipairs(requests) do
+		if name ~= "" then
+			player.character.set_request_slot(name, index)
+		else
+			player.character.set_quick_bar_slot(nil, index)
+		end
+	end
+end
+
+local function serialize_trashfilters(player)
+    return player.auto_trash_filters
+end
+
+local function deserialize_trashfilters(player, auto_trash_filters)
+    player.auto_trash_filters = auto_trash_filters
+end
+
 local function serialize_player(player)
 	local seed = game.surfaces[1].map_gen_settings.seed
 	local playerData = ""
@@ -870,6 +896,12 @@ local function serialize_player(player)
 
 	local quickbar = serialize_quickbar(player)
 	playerData = playerData .. "~quickbar:"..serpent.line(quickbar)
+
+	local requests = serialize_requests(player)
+	playerData = playerData .. "~requests:"..serpent.line(requests)
+
+    local trashfilters = serialize_trashfilters(player)
+    playerData = playerData .. "~trashfilters:"..serpent.line(trashfilters)
 
 	global.inventoryLastSyncTick[player.name] = game.tick
 	return playerData
@@ -981,7 +1013,9 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 	player.print("Registered you joining the game, preparing profile sync...")
 end)
 
-script.on_event(defines.events.on_player_left_game, function(event)
+-- script.on_event(defines.events.on_player_left_game, function(event) end)
+
+script.on_event(defines.events.on_pre_player_left_game, function(event)
 	if not(event and event.player_index) then
 		return
 	end
@@ -1020,7 +1054,7 @@ remote.add_interface("playerManager", {
 		-- 	game.print("Downloading account for "..playerName.."...")
 		-- end
 	end,
-	importInventory = function(playerName, invData, quickbarData, forceName, spectator, admin, color, chat_color, tag)
+	importInventory = function(playerName, invData, quickbarData, requestsData, trashData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
 		if not player then game.print("Player "..playerName.." left before they could get their inventory!") end
 		if not global.inventorySyncEnabled then 
@@ -1031,6 +1065,8 @@ remote.add_interface("playerManager", {
 			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
 			local ok, quickbarTable = serpent.load(quickbarData)
+			local ok, requestsTable = serpent.load(requestsData)
+			local ok, trashTable = serpent.load(trashData)
 
 			global.inventorySynced= global.inventorySynced or {}
 
@@ -1061,6 +1097,10 @@ remote.add_interface("playerManager", {
 			deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1] or {})
 
 			deserialize_quickbar(player, quickbarTable or {})
+
+			deserialize_requests(player, requestsTable or {})
+
+            deserialize_trashfilters(player, trashTable or {})
 
 			player.print("Inventory synchronized.")
 			global.inventorySynced[player.name] = true
