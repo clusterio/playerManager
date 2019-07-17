@@ -1,4 +1,5 @@
 require("mod-gui")
+local outputFile = "playerManager.txt"
 
 local function setRestrictedPermissions(permission_group)
 	permission_group.set_allows_action(defines.input_action.activate_copy,false)
@@ -896,7 +897,8 @@ local function defaultSyncConditionCheck(event)
 		for _, player in pairs(game.connected_players ) do
 			if global.inventorySynced[player.name] == true then
 				if global.inventoryLastSyncTick[player.name] == nil or global.inventoryLastSyncTick[player.name] < event.tick - (60*60) then
-					global.playersToExport = global.playersToExport .. serialize_player(player)
+					--global.playersToExport = global.playersToExport .. serialize_player(player)
+					game.write_file(outputFile, "EXPORT" .. serialize_player(player) .. "\n", true, 0)
 				end
 			end
 		end
@@ -914,7 +916,8 @@ local function defaultSyncConditionCheck(event)
 	for _, player in pairs(game.connected_players ) do
 -- should get called when the inventory gets synced anyway. so don't do it here and twice
 --			backupPlayerStuff(player)
-			table.insert(global.playersToImport, player.name)
+			--table.insert(global.playersToImport, player.name)
+			game.write_file(outputFile, "IMPORT" .. player.name .. "\n", true, 0)
 			player.print("Preparing profile sync...")
 	end
 
@@ -925,8 +928,8 @@ end
 script.on_nth_tick(60, defaultSyncConditionCheck)
 
 script.on_init(function()
-	global.playersToImport = {}
-	global.playersToExport = ""
+	--global.playersToImport = {}
+	--global.playersToExport = ""
 	global.inventory_types = {}
 	global.inventorySynced = {} -- array of player_index=>bool
 	global.inventorySyncEnabled = true
@@ -973,7 +976,8 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 			player.print("inventorySyncEnabled=" .. inventorySyncEnabledStr .. ", player exists in inventorySynced: " .. invSyncedForPlayer)
 		end
 	end
-	table.insert(global.playersToImport, player.name)
+	--table.insert(global.playersToImport, player.name)
+	game.write_file(outputFile, "IMPORT" .. player.name .. "\n", true, 0)
 	player.print("Registered you joining the game, preparing profile sync...")
 end)
 
@@ -988,7 +992,10 @@ script.on_event(defines.events.on_player_left_game, function(event)
 	if not (global.inventorySynced and global.inventorySynced[player.name] == true) then
 		return
 	end
-	global.playersToExport = global.playersToExport .. serialize_player(player)
+	--global.playersToExport = global.playersToExport .. serialize_player(player)
+
+	game.write_file(outputFile, "EXPORT" .. serialize_player(player) .. "\n", true, 0)
+
 	log("Registered "..player.name.." leaving the game, preparing for upload...")
 	global.inventorySynced[player.name] = false
 end)
@@ -1007,11 +1014,11 @@ remote.add_interface("playerManager", {
 		load(code, "playerTracking code injection failed!", "t", _ENV)()
 	end,
 	getImportTask = function()
-		if #global.playersToImport >= 1 then
-			local playerName = table.remove(global.playersToImport, 1)
-			rcon.print(playerName)
-			game.print("Downloading account for "..playerName.."...")
-		end
+		-- if #global.playersToImport >= 1 then
+		-- 	local playerName = table.remove(global.playersToImport, 1)
+		-- 	rcon.print(playerName)
+		-- 	game.print("Downloading account for "..playerName.."...")
+		-- end
 	end,
 	importInventory = function(playerName, invData, quickbarData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
@@ -1073,11 +1080,11 @@ remote.add_interface("playerManager", {
 		global.playersToImport = {}
 	end,
 	exportPlayers = function()
-		if global.playersToExport and string.len(global.playersToExport) > 10 then
-		        rcon.print(global.playersToExport)
-			log("Exported player profiles")
-			global.playersToExport = ""
-		end
+		-- if global.playersToExport and string.len(global.playersToExport) > 10 then
+		--         rcon.print(global.playersToExport)
+		-- 	log("Exported player profiles")
+		-- 	global.playersToExport = ""
+		-- end
 	end,
 	setPlayerPermissionGroup = function(playerName, permissionGroupName)
 		setPlayerPermissionGroupLocal(playerName, permissionGroupName)
