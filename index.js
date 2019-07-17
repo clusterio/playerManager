@@ -59,7 +59,7 @@ module.exports = class remoteCommands {
 		if(player){
 			if(player.inventory){
 				this.messageInterface(`Downloading ${playerName}'s inventory`);
-				this.messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.quickbar}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
+				this.messageInterface(`/silent-command remote.call("playerManager", "importInventory", "${player.name}", '${player.inventory}', '${player.quickbar}', '${player.requests}', '${player.trashfilters}', '${player.forceName}', ${player.spectator}, ${player.admin}, {r=${player.r}, g=${player.g}, b=${player.b}, a=${player.a}}, {r=${player.cr}, g=${player.cg}, b=${player.cb}, a=${player.ca}}, "${player.tag || ""}")`);
 			}
 			if(player.admin === "true") {
 				playerIsAdmin = true;
