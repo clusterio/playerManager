@@ -845,16 +845,22 @@ local function deserialize_quickbar(player, quickbar)
 end
 
 local function serialize_requests(player)
+	if not player.character then
+		return {}
+	end
+
 	local requests = {}
 	for i = 1, player.force.character_logistic_slot_count do
-		if player.character ~= nil then
 			requests[i] = player.character.get_request_slot(i)
-		end
 	end
 	return requests
 end
 
 local function deserialize_requests(player, requests)
+	if not player.character then
+		return
+	end
+
 	for index, name in ipairs(requests) do
 		if name ~= "" then
 			player.character.set_request_slot(name, index)
@@ -865,10 +871,18 @@ local function deserialize_requests(player, requests)
 end
 
 local function serialize_trashfilters(player)
+	if not player.character then
+		return {}
+	end
+
 	return player.auto_trash_filters
 end
 
 local function deserialize_trashfilters(player, auto_trash_filters)
+	if not player.character then
+		return
+	end
+
 	player.auto_trash_filters = auto_trash_filters
 end
 
