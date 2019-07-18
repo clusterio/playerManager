@@ -1,14 +1,14 @@
 --[[Misc functions for serializing stuff]]
 local inventory_types = {}
 do
-    local map = {}
-    for _, inventory_type in pairs(defines.inventory) do
-        map[inventory_type] = true
-    end
-    for t in pairs(map) do
-        inventory_types[#inventory_types + 1] = t
-    end
-    table.sort(inventory_types)
+	local map = {}
+	for _, inventory_type in pairs(defines.inventory) do
+		map[inventory_type] = true
+	end
+	for t in pairs(map) do
+		inventory_types[#inventory_types + 1] = t
+	end
+	table.sort(inventory_types)
 end
 local function serialize_equipment_grid(grid)
 	local names, energy, shield, xs, ys = {}, {}, {}, {}, {}
