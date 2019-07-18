@@ -660,60 +660,60 @@ local function deserialize_inventory(inventory, data)
 	local item_exports = data.item_exports or {}
 	local item_labels = data.item_labels or {}
 	local item_grids = data.item_grids or {}
-    for idx, name in pairs(item_names) do
-        local slot = inventory[idx]
-        slot.set_stack({
-            name = name,
-            count = item_counts[idx]
-        })
-        if item_durabilities[idx] ~= nil then
-            slot.durability = item_durabilities[idx]
-        end
-        if item_ammos[idx] ~= nil then
-            slot.ammo = item_ammos[idx]
-        end
-        local label = item_labels[idx]
+	for idx, name in pairs(item_names) do
+		local slot = inventory[idx]
+		slot.set_stack({
+			name = name,
+			count = item_counts[idx]
+		})
+		if item_durabilities[idx] ~= nil then
+			slot.durability = item_durabilities[idx]
+		end
+		if item_ammos[idx] ~= nil then
+			slot.ammo = item_ammos[idx]
+		end
+		local label = item_labels[idx]
 		-- We got a crash on line 1 of this IF statement with AAI programmable vehicles's unit-remote-control item where label = {allow_manual_label_change = true}
 		-- we attempt to fix this by checking slot.is_item_with_label, but we have no idea if this property is set properly. Label syncing might be broken.
-        if label and slot.is_item_with_label then
-            slot.label = label.label
-            slot.label_color = label.label_color
-            slot.allow_manual_label_change = label.allow_manual_label_change
-        end
+		if label and slot.is_item_with_label then
+			slot.label = label.label
+			slot.label_color = label.label_color
+			slot.allow_manual_label_change = label.allow_manual_label_change
+		end
 
-        local grid = item_grids[idx]
-        if grid then
-            deserialize_grid(slot.grid, grid)
-        end
-    end
-    for idx, str in pairs(item_exports) do
-        local success = inventory[idx].import_stack(str)
-        if success == -1 then
-            print("item imported with errors")
-        elseif success == 1 then
-            print("failed to import item")
-        end
+		local grid = item_grids[idx]
+		if grid then
+			deserialize_grid(slot.grid, grid)
+		end
+	end
+	for idx, str in pairs(item_exports) do
+		local success = inventory[idx].import_stack(str)
+		if success == -1 then
+			print("item imported with errors")
+		elseif success == 1 then
+			print("failed to import item")
+		end
 
-    end
-    if data.filters then
-        for idx, filter in pairs(data.filters) do
-            inventory.set_filter(idx, filter)
-        end
-    end
+	end
+	if data.filters then
+		for idx, filter in pairs(data.filters) do
+			inventory.set_filter(idx, filter)
+		end
+	end
 end
 
 -- functions for exporting a players data
 --[[Misc functions for serializing stuff]]
 local inventory_types = {}
 do
-    local map = {}
-    for _, inventory_type in pairs(defines.inventory) do
-        map[inventory_type] = true
-    end
-    for t in pairs(map) do
-        inventory_types[#inventory_types + 1] = t
-    end
-    table.sort(inventory_types)
+	local map = {}
+	for _, inventory_type in pairs(defines.inventory) do
+		map[inventory_type] = true
+	end
+	for t in pairs(map) do
+		inventory_types[#inventory_types + 1] = t
+	end
+	table.sort(inventory_types)
 end
 local function serialize_equipment_grid(grid)
 	local names, energy, shield, xs, ys = {}, {}, {}, {}, {}
@@ -845,13 +845,13 @@ local function deserialize_quickbar(player, quickbar)
 end
 
 local function serialize_requests(player)
-    local requests = {}
-    for i = 1, player.force.character_logistic_slot_count do
+	local requests = {}
+	for i = 1, player.force.character_logistic_slot_count do
 		if player.character ~= nil then
 			requests[i] = player.character.get_request_slot(i)
 		end
-    end
-    return requests
+	end
+	return requests
 end
 
 local function deserialize_requests(player, requests)
@@ -865,11 +865,11 @@ local function deserialize_requests(player, requests)
 end
 
 local function serialize_trashfilters(player)
-    return player.auto_trash_filters
+	return player.auto_trash_filters
 end
 
 local function deserialize_trashfilters(player, auto_trash_filters)
-    player.auto_trash_filters = auto_trash_filters
+	player.auto_trash_filters = auto_trash_filters
 end
 
 local function serialize_player(player)
@@ -902,8 +902,8 @@ local function serialize_player(player)
 	local requests = serialize_requests(player)
 	playerData = playerData .. "~requests:"..serpent.line(requests)
 
-    local trashfilters = serialize_trashfilters(player)
-    playerData = playerData .. "~trashfilters:"..serpent.line(trashfilters)
+	local trashfilters = serialize_trashfilters(player)
+	playerData = playerData .. "~trashfilters:"..serpent.line(trashfilters)
 
 	global.inventoryLastSyncTick[player.name] = game.tick
 	return playerData
@@ -1102,7 +1102,7 @@ remote.add_interface("playerManager", {
 
 			deserialize_requests(player, requestsTable or {})
 
-            deserialize_trashfilters(player, trashTable or {})
+			deserialize_trashfilters(player, trashTable or {})
 
 			player.print("Inventory synchronized.")
 			global.inventorySynced[player.name] = true
