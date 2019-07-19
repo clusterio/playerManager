@@ -850,9 +850,12 @@ local function serialize_requests(player)
 	end
 
 	local requests = {}
-	for i = 1, player.force.character_logistic_slot_count do
+	if player.character.request_slot_count then
+		for i = 1, player.character.request_slot_count do
 			requests[i] = player.character.get_request_slot(i)
+		end
 	end
+
 	return requests
 end
 
