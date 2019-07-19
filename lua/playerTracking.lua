@@ -865,11 +865,13 @@ local function deserialize_requests(player, requests)
 	end
 
 	for index, slot in pairs(requests) do
-		if slot then
-			player.character.set_request_slot(slot, index)
-		else
-			player.character.set_quick_bar_slot(nil, index)
-		end
+        if player.character.request_slot_count >= index then
+            if slot then
+                player.character.set_request_slot(slot, index)
+            else
+                player.character.set_quick_bar_slot(nil, index)
+            end
+        end
 	end
 end
 
