@@ -850,9 +850,12 @@ local function serialize_requests(player)
 	end
 
 	local requests = {}
-	for i = 1, player.force.character_logistic_slot_count do
+	if player.character.request_slot_count then
+		for i = 1, player.character.request_slot_count do
 			requests[i] = player.character.get_request_slot(i)
+		end
 	end
+
 	return requests
 end
 
@@ -861,9 +864,9 @@ local function deserialize_requests(player, requests)
 		return
 	end
 
-	for index, name in ipairs(requests) do
-		if name ~= "" then
-			player.character.set_request_slot(name, index)
+	for index, slot in pairs(requests) do
+		if slot then
+			player.character.set_request_slot(slot, index)
 		else
 			player.character.set_quick_bar_slot(nil, index)
 		end
