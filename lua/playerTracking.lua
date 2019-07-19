@@ -864,9 +864,9 @@ local function deserialize_requests(player, requests)
 		return
 	end
 
-	for index, name in ipairs(requests) do
-		if name ~= "" then
-			player.character.set_request_slot(name, index)
+	for index, slot in pairs(requests) do
+		if slot then
+			player.character.set_request_slot(slot, index)
 		else
 			player.character.set_quick_bar_slot(nil, index)
 		end
