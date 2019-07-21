@@ -1082,6 +1082,10 @@ remote.add_interface("playerManager", {
 			player.print("Inventory sync on this server is disabled.")
 			return
 		end
+		if not player.connected then
+			-- don't bother
+			return
+		end
 		local status, err = pcall(function()
 			player.ticks_to_respawn = nil
 			local ok, invTable = serpent.load(invData)
