@@ -1077,7 +1077,10 @@ remote.add_interface("playerManager", {
 	end,
 	importInventory = function(playerName, invData, quickbarData, requestsData, trashData, forceName, spectator, admin, color, chat_color, tag)
 		local player = game.players[playerName]
-		if not player then game.print("Player "..playerName.." left before they could get their inventory!") end
+		if not player then
+			game.print("Player "..playerName.." left before they could get their inventory!")
+			return
+		end
 		if not global.inventorySyncEnabled then 
 			player.print("Inventory sync on this server is disabled.")
 			return
