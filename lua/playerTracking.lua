@@ -696,8 +696,8 @@ local function deserialize_inventory(inventory, data)
 
 	end
 	if data.filters then
-		for idx, filter in pairs(data.filters) do
-			inventory.set_filter(idx, filter)
+		for i = 1, #inventory do
+			inventory.set_filter(i, data.filters[i])
 		end
 	end
 end
@@ -864,14 +864,12 @@ local function deserialize_requests(player, requests)
 		return
 	end
 
-	for index, slot in pairs(requests) do
-        if player.character.request_slot_count >= index then
-            if slot then
-                player.character.set_request_slot(slot, index)
-            else
-                player.character.set_quick_bar_slot(nil, index)
-            end
-        end
+	for i = 1, player.character.request_slot_count do
+		if requests[i] then
+			player.character.set_request_slot(requests[i], i)
+		else
+			player.character.clear_request_slot(i)
+		end
 	end
 end
 
