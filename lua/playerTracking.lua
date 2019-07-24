@@ -864,8 +864,9 @@ local function deserialize_requests(player, requests)
 		return
 	end
 
+	local next = next
 	for i = 1, player.character.request_slot_count do
-		if requests[i] then
+		if requests[i] and (next(requests[i]) ~= nil) then
 			player.character.set_request_slot(requests[i], i)
 		else
 			player.character.clear_request_slot(i)
