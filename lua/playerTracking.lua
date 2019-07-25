@@ -618,8 +618,10 @@ local function backupPlayerStuff(player)
 end
 
 local function clearInventory(player)
-	for i = 1, player.character.request_slot_count do
-		player.character.clear_request_slot(i)
+	if player.character then
+		for i = 1, player.character.request_slot_count do
+			player.character.clear_request_slot(i)
+		end
 	end
 
 	for _, invType in pairs({
