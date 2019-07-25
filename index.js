@@ -133,7 +133,7 @@ module.exports = class remoteCommands {
 			this.messageInterface(banner)
 			this.messageInterface(reason)
 			this.messageInterface("Im OK")
-			let banlist = (await needle("get", { compressed: true }, this.config.masterIP+":"+this.config.masterPort+"/api/playerManager/bannedPlayers")).body;
+			let banlist = (await needle("get", this.config.masterIP+":"+this.config.masterPort+"/api/playerManager/bannedPlayers"), {compressed:true}).body;
 			
 			// avoid banning players who are already banned
 			let playerIsAlreadyBannned = false;
@@ -143,12 +143,12 @@ module.exports = class remoteCommands {
 			});
 			if(playerIsAlreadyBannned) return true;
 			
-			needle.post(this.config.masterIP+":"+this.config.masterPort+"/api/playerManager/banlist", { compressed: true }, {
+			needle.post(this.config.masterIP+":"+this.config.masterPort+"/api/playerManager/banlist", {
 				factorioName: bannedName,
 				action: "add",
 				reason,
 				token: this.config.masterAuthToken,
-			}, (err, response) => {
+			}, {"compressed":true}, (err, response) => {
 				if(err){
 					console.error(err);
 				} else if(response.statusCode != 200){
@@ -167,7 +167,7 @@ module.exports = class remoteCommands {
 		return new Promise((resolve, reject) => {
 			let instance = this.instances[instanceID];
 			if(!instance){
-				needle.get(this.config.masterIP+":"+this.config.masterPort+ '/api/slaves', { compressed: true }, (err, response) => {
+				needle.get(this.config.masterIP+":"+this.config.masterPort+ '/api/slaves', {"compressed":true}, (err, response) => {
 					if(err || response.statusCode != 200) {
 						console.log("Unable to get JSON master/api/slaves, master might be unaccessible");
 					} else if (response && response.body) {	
