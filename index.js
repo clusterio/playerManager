@@ -45,7 +45,7 @@ module.exports = class remoteCommands {
 	}
 	async importPlayer(playerName) {
 		console.log("isBanned?: " + playerName);
-		let isPlayerBanned = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+		let isPlayerBanned = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken}, {"compressed":true});
 		console.log("isBanned done: " + playerName);
 		if(isPlayerBanned.body.msg === true){
 			this.messageInterface(`/ban ${playerName}`);
@@ -53,7 +53,7 @@ module.exports = class remoteCommands {
 		}
 		// import inventory
 		console.log("getPlayer: " + playerName);
-		let player = (await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/getPlayer`, { "name": playerName, "token": this.config.masterAuthToken})).body.player;
+		let player = (await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/getPlayer`, {"name": playerName, "token": this.config.masterAuthToken}, {"compressed":true})).body.player;
 		console.log("getPlayer done: " + playerName);
 		let playerIsAdmin = false;
 		if(player){
@@ -70,7 +70,7 @@ module.exports = class remoteCommands {
 		}
 		if(!playerIsAdmin) {
 			console.log("isPlayerWhitelisted: " + playerName);
-			let isPlayerWhitelisted = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerWhitelisted`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+			let isPlayerWhitelisted = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerWhitelisted`, { "factorioName": playerName, "token": this.config.masterAuthToken}, {"compressed":true});
 			console.log("isPlayerWhitelisted done: " + playerName);
 			if(isPlayerWhitelisted.body.msg === true){
 				this.messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
@@ -133,7 +133,7 @@ module.exports = class remoteCommands {
 			this.messageInterface(banner)
 			this.messageInterface(reason)
 			this.messageInterface("Im OK")
-			let banlist = (await needle("get", this.config.masterIP+":"+this.config.masterPort+"/api/playerManager/bannedPlayers")).body;
+			let banlist = (await needle("get", this.config.masterIP+":"+this.config.masterPort+"/api/playerManager/bannedPlayers"), {compressed:true}).body;
 			
 			// avoid banning players who are already banned
 			let playerIsAlreadyBannned = false;
@@ -148,7 +148,7 @@ module.exports = class remoteCommands {
 				action: "add",
 				reason,
 				token: this.config.masterAuthToken,
-			}, (err, response) => {
+			}, {"compressed":true}, (err, response) => {
 				if(err){
 					console.error(err);
 				} else if(response.statusCode != 200){
@@ -167,7 +167,7 @@ module.exports = class remoteCommands {
 		return new Promise((resolve, reject) => {
 			let instance = this.instances[instanceID];
 			if(!instance){
-				needle.get(this.config.masterIP+":"+this.config.masterPort+ '/api/slaves', (err, response) => {
+				needle.get(this.config.masterIP+":"+this.config.masterPort+ '/api/slaves', {"compressed":true}, (err, response) => {
 					if(err || response.statusCode != 200) {
 						console.log("Unable to get JSON master/api/slaves, master might be unaccessible");
 					} else if (response && response.body) {	
