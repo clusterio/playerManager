@@ -45,7 +45,7 @@ module.exports = class remoteCommands {
 	}
 	async importPlayer(playerName) {
 		console.log("isBanned?: " + playerName);
-		let isPlayerBanned = await needle("post", { compressed: true }, `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+		let isPlayerBanned = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerBanned`, { "factorioName": playerName, "token": this.config.masterAuthToken}, {"compressed":true});
 		console.log("isBanned done: " + playerName);
 		if(isPlayerBanned.body.msg === true){
 			this.messageInterface(`/ban ${playerName}`);
@@ -53,7 +53,7 @@ module.exports = class remoteCommands {
 		}
 		// import inventory
 		console.log("getPlayer: " + playerName);
-		let player = (await needle("post", { compressed: true }, `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/getPlayer`, { "name": playerName, "token": this.config.masterAuthToken})).body.player;
+		let player = (await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/getPlayer`, {"name": playerName, "token": this.config.masterAuthToken}, {"compressed":true})).body.player;
 		console.log("getPlayer done: " + playerName);
 		let playerIsAdmin = false;
 		if(player){
@@ -70,7 +70,7 @@ module.exports = class remoteCommands {
 		}
 		if(!playerIsAdmin) {
 			console.log("isPlayerWhitelisted: " + playerName);
-			let isPlayerWhitelisted = await needle("post", { compressed: true }, `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerWhitelisted`, { "factorioName": playerName, "token": this.config.masterAuthToken});
+			let isPlayerWhitelisted = await needle("post", `${this.config.masterIP}:${this.config.masterPort}/api/playerManager/isPlayerWhitelisted`, { "factorioName": playerName, "token": this.config.masterAuthToken}, {"compressed":true});
 			console.log("isPlayerWhitelisted done: " + playerName);
 			if(isPlayerWhitelisted.body.msg === true){
 				this.messageInterface(`/silent-command remote.call("playerManager", "setPlayerPermissionGroup", "${playerName}", "Standard")`);
