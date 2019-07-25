@@ -234,11 +234,9 @@ class masterPlugin {
 	}
 	pollForPlayers(socket, instanceID){
 		// console.log("Polling for players")
+		if(pmSockets.indexOf(socket) == -1) return
 		socket.emit("playerManagerGetPlayers");
-		setTimeout(() => this.pollForPlayers(socket, instanceID), this.getPlayerPollingTime(instanceID));
-	}
-	getPlayerPollingTime(instanceID){
-		return 1000;
+		setTimeout(() => this.pollForPlayers(socket, instanceID), 1000);
 	}
 	parseData(data, sharedData){
 		let parsedData = [];
