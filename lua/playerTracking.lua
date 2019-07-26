@@ -1125,19 +1125,21 @@ remote.add_interface("playerManager", {
 			player.chat_color = chat_color
 			player.tag = tag
 			
-			-- Clear old inventories
-			clearInventory(player)
+			if invTable then
+				-- Clear old inventories
+				clearInventory(player)
 
-			-- 3: pistol.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3] or {})
-			-- 4: Ammo.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4] or {})
-			-- 5: armor.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5] or {})
-			-- 8: express-transport-belt (trash slots)
-			deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8] or {})
-			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
-			deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1] or {})
+				-- 3: pistol.
+				deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3] or {})
+				-- 4: Ammo.
+				deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4] or {})
+				-- 5: armor.
+				deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5] or {})
+				-- 8: express-transport-belt (trash slots)
+				deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8] or {})
+				-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
+				deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1] or {})
+			end
 
 			deserialize_quickbar(player, quickbarTable or {})
 
