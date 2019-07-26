@@ -1139,6 +1139,8 @@ remote.add_interface("playerManager", {
 				deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8] or {})
 				-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
 				deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1] or {})
+			else
+				player.print("Your inventory was lost due to an error")
 			end
 
 			deserialize_quickbar(player, quickbarTable or {})
@@ -1151,6 +1153,7 @@ remote.add_interface("playerManager", {
 			global.inventorySynced[player.name] = true
 		end)
 		if err then 
+			player.print("An error occured while syncronizing inventory")
 			log("ERROR CAUGHT in importInventory: ")
 			log(err)
 		end
