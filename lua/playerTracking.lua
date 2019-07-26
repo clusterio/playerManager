@@ -638,6 +638,16 @@ local function clearInventory(player)
 	end
 end
 
+local function loadPlayerData(data, name, player)
+	local ok, result = serpent.load(data)
+	if not ok then
+		log("ERROR in loadPlayerData: loading "..name.." for "..player.name.." failed with error "..result)
+		log("Content of data: "..data)
+		return nil
+	end
+	return result
+end
+
 local function deserialize_grid(grid, data)
 	grid.clear()
 	local names, energy, shield, xs, ys = data.names, data.energy, data.shield, data.xs, data.ys
@@ -1096,10 +1106,10 @@ remote.add_interface("playerManager", {
 		end
 		local status, err = pcall(function()
 			player.ticks_to_respawn = nil
-			local ok, invTable = serpent.load(invData)
-			local ok, quickbarTable = serpent.load(quickbarData)
-			local ok, requestsTable = serpent.load(requestsData)
-			local ok, trashTable = serpent.load(trashData)
+			local invTable = loadPlayerData(invData, "invData", player)
+			local quickbarTable = loadPlayerData(quickbarData, "quickbarData", player)
+			local requestsTable = loadPlayerData(requestsData, "requestsData", player)
+			local trashTable = loadPlayerData(trashData, "trashData", player)
 
 			global.inventorySynced= global.inventorySynced or {}
 
@@ -1115,19 +1125,23 @@ remote.add_interface("playerManager", {
 			player.chat_color = chat_color
 			player.tag = tag
 			
-			-- Clear old inventories
-			clearInventory(player)
+			if invTable then
+				-- Clear old inventories
+				clearInventory(player)
 
-			-- 3: pistol.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3] or {})
-			-- 4: Ammo.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4] or {})
-			-- 5: armor.
-			deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5] or {})
-			-- 8: express-transport-belt (trash slots)
-			deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8] or {})
-			-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
-			deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1] or {})
+				-- 3: pistol.
+				deserialize_inventory(player.get_inventory(defines.inventory.character_guns), invTable[3] or {})
+				-- 4: Ammo.
+				deserialize_inventory(player.get_inventory(defines.inventory.character_ammo), invTable[4] or {})
+				-- 5: armor.
+				deserialize_inventory(player.get_inventory(defines.inventory.character_armor), invTable[5] or {})
+				-- 8: express-transport-belt (trash slots)
+				deserialize_inventory(player.get_inventory(defines.inventory.character_trash), invTable[8] or {})
+				-- 1: Main inventory (do that AFTER armor, otherwise there won't be space)
+				deserialize_inventory(player.get_inventory(defines.inventory.character_main), invTable[1] or {})
+			else
+				player.print("Your inventory was lost due to an error")
+			end
 
 			deserialize_quickbar(player, quickbarTable or {})
 
@@ -1139,6 +1153,7 @@ remote.add_interface("playerManager", {
 			global.inventorySynced[player.name] = true
 		end)
 		if err then 
+			player.print("An error occured while syncronizing inventory")
 			log("ERROR CAUGHT in importInventory: ")
 			log(err)
 		end
